@@ -1,0 +1,81 @@
+{
+	"name": "cat-coding",
+	"description": "League Extensions",
+	"version": "0.0.1",
+	"publisher": "vscode-samples",
+	"private": true,
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Other"
+	],
+
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+
+			{
+				"command": "jointheleague.openVirtualDisplay",
+				"title": "Open Virtual Display",
+				"category": "League"
+			}
+		],
+
+		"menus": {
+	
+			"editor/title": [
+				{
+				"command": "jointheleague.openVirtualDisplay",
+				"group": "navigation"
+				}
+			],
+			"view": [
+				{
+				"command": "jointheleague.openVirtualDisplay",
+				"group": "navigation"
+				}
+			],
+			"menuBar": [
+				{
+					"id": "League",       
+					"label": "League",
+					"submenu": "leagueMenu"
+				}
+			],
+			"leagueMenu": [      
+				{
+					"command": "jointheleague.openVirtualDisplay",
+					"group": "navigation"
+				}
+			]
+		}
+	},
+	"files": [
+    	"media/*"
+  	],
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint",
+		"watch": "tsc -w -p ./"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/node": "^20",
+		"@types/vscode": "^1.73.0",
+		"@types/vscode-webview": "^1.57.0",
+		"eslint": "^9.13.0",
+		"typescript": "^5.7.2",
+		"typescript-eslint": "^8.16.0"
+	}
+}
