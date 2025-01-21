@@ -70,8 +70,7 @@ jobs:
         id: find_vsix
         run: |
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          echo "vsix_file=$VSIX_FILE" >> $GITHUB_ENV
-          echo "::set-output name=vsix_file::$VSIX_FILE"
+          echo "vsix_file=$VSIX_FILE" >>  "$GITHUB_OUTPUT"
 
       # Step 8: Debug: Show VSIX file
       - name: Debug: Show VSIX file
