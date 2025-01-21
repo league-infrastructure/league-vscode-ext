@@ -69,7 +69,7 @@ jobs:
         id: find_vsix
         run: |
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          echo "$VSIX_FILE" > $GITHUB_OUTPUT"
+          echo "$VSIX_FILE" > $GITHUB_OUTPUT
 
       - name: Debug Output
         run: echo "Found VSIX file: ${{ steps.find_vsix.outputs.vsix_file }} "
