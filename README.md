@@ -20,5 +20,10 @@ vsce package
 ```
 
 Then submit the .vsix file as a release on Github. 
+https://github.com/league-infrastructure/league-vscode-ext/releases
+
+
+Finally, add the new version to the code-server package installation, such 
+as https://github.com/league-infrastructure/docker-codeserver-python/blob/master/app/install-extensions.sh
 
 

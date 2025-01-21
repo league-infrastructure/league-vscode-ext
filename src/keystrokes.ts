@@ -6,8 +6,9 @@ import { URL } from 'url';
 interface KeystrokeData {
     timestamp: string;
     containerID: string;
-    keystrokesPerSecond: number;
-    reportingRate: number;
+    keystrokes: number; // Latest report of number of keystrokes in the last interval
+	average30m: number; // Average keystrokes per second over the last 30 minutes
+    reportingRate: number; // How often to report, reports per second. 
 }
 
 
@@ -15,6 +16,8 @@ interface KeystrokeData {
 export class KeystrokeMonitor {
     private keystrokes: number = 0;
     private interval: NodeJS.Timeout | undefined;
+	private average30m: number = 0; // Average keystrokes per second over the last 30 minutes
+	private nReports: number = 0; // Number of reports sent
     private readonly reportingUrl: string;
     private readonly containerID: string;
     private readonly reportRate: number;
@@ -70,14 +73,27 @@ export class KeystrokeMonitor {
     }
 
     private handleKeystroke() {
+
         this.keystrokes++;
     }
 
     private async reportMetrics() {
+
+		// Compute a running average over either the number of reports that have been send, 
+		// of a reporting window of 30 minutes, whichever is smaller.
+
+		this.nReports++;
+
+		const reportingIntervalsIn30Minutes = (30 * 60) / this.reportRate;
+        const queueSize = Math.min(this.nReports, reportingIntervalsIn30Minutes);
+		const currentKPS = this.keystrokes / this.reportRate;
+		this.average30m = ((this.average30m * (queueSize - 1)) + currentKPS) / queueSize;
+	
         const data: KeystrokeData = {
             timestamp: new Date().toISOString(),
             containerID: this.containerID,
-            keystrokesPerSecond: this.keystrokes,
+            keystrokes: this.keystrokes,
+            average30m: this.average30m,
             reportingRate: this.reportRate
         };
 
