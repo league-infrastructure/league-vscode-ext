@@ -52,9 +52,11 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "release_tag=${{ github.ref_name }}" >> $GITHUB_ENV
           else
-            echo "release_tag=latest" >> $GITHUB_ENV
+            commit_hash=$(echo "${{ github.sha }}" | cut -c1-5)
+            echo "release_tag=latest-${commit_hash}" >> $GITHUB_ENV
           fi
         shell: bash
+
 
       # Step 8: Create a GitHub release
       - name: Create GitHub Release
