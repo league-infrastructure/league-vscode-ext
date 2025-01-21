@@ -41,7 +41,6 @@ jobs:
           ls -la .*
           tree -I node_modules
 
-          
       # Step 6: Package the extension
       - name: Package the VSCode extension
         run: npx @vscode/vsce package
