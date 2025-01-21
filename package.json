@@ -1,8 +1,8 @@
 {
-	"name": "cat-coding",
+	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"version": "0.0.1",
-	"publisher": "vscode-samples",
+	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
 	"repository": {

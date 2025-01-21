@@ -1,3 +1,5 @@
+
+
 # League VSCode Extension
 
 The extension:
@@ -6,5 +8,17 @@ The extension:
 
 ## Running the example
 
-Go to the launch menu and select `Run Extension`. 
-# league-vscode-ext
+run `npm install` then go to the launch menu and select `Run Extension`. 
+
+
+## Packaging and distribution
+
+
+```bash
+npm install -g vsce
+vsce package
+```
+
+Then submit the .vsix file as a release on Github. 
+
+

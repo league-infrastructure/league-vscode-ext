@@ -6,6 +6,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			// Use while true; do nc -l 8095; done for testing
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
@@ -14,7 +15,11 @@
 			"outFiles": ["${workspaceFolder}/out/**/*.js"],
 			"preLaunchTask": "npm: watch",
 			"env": {
-                "VNC_URL": "https:jointheleague.org"
+                "VNC_URL": "https://jointheleague.org",
+				"KST_REPORTING_URL": "http://localhost:8095",
+                "KST_CONTAINER_ID": "container-123",
+				"KST_REPORT_RATE": "1",
+				"KST_DEBUG": "true",
             }
 		}
 	]
