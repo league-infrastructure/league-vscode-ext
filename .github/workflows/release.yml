@@ -34,13 +34,6 @@ jobs:
       - name: Build the VSCode extension
         run: npm run compile
 
-      # Step 5: Debug build output
-      - name: Debug build output
-        run: |
-          pwd
-          ls -la .*
-          tree -I node_modules
-
       # Step 6: Package the extension
       - name: Package the VSCode extension
         run: npx @vscode/vsce package
@@ -72,10 +65,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Rename VSIX file
+
+      - name: Debug build output
         run: |
-          VSIX_FILE=$(ls *.vsix)
-          mv "$VSIX_FILE" "${{ env.release_tag }}.vsix"
+          pwd
+          tree -I node_modules
+
 
       # Step 9: Upload the VSIX file
       - name: Upload VSIX to Release
