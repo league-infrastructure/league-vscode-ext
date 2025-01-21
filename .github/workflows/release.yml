@@ -72,6 +72,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Rename VSIX file
+        run: |
+          VSIX_FILE=$(ls *.vsix)
+          mv "$VSIX_FILE" "${{ env.release_tag }}.vsix"
 
       # Step 9: Upload the VSIX file
       - name: Upload VSIX to Release
