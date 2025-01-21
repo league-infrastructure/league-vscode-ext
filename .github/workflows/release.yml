@@ -73,7 +73,7 @@ jobs:
           echo "vsix_file=$VSIX_FILE" >>  "$GITHUB_OUTPUT"
 
       # Step 8: Debug: Show VSIX file
-      - name: Debug: Show VSIX file
+      - name: Debug Show VSIX file
         run: echo "VSIX file: ${{ steps.find_vsix.outputs.vsix_file }}"
 
       # Step 9: Upload the VSIX file
