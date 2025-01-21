@@ -65,23 +65,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: Identify VSIX file
         id: find_vsix
         run: |
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          if [ -z "$VSIX_FILE" ]; then
-            echo "Error: No .vsix file found!" >&2
-            exit 1
-          fi
-          echo "vsix_file=$VSIX_FILE" >> $GITHUB_ENV
-          echo "::set-output name=vsix_file::$VSIX_FILE"
-          echo "Generated VSIX file: ${{ env.vsix_file }}"
+          echo "$VSIX_FILE" > $GITHUB_OUTPUT
 
+      - name: Debug Output
+        run: echo "Found VSIX file: ${{ steps.find_vsix.outputs.vsix_file }}"
 
       # Step 9: Upload the VSIX file
       - name: Upload VSIX to Release
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}  # Use the captured URL
           asset_path: '${{ env.vsix_file }}'
