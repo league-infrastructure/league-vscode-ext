@@ -9,3 +9,4 @@ tsconfig.lsif.json
 *.db
 *.tsbuildinfo
 .venv
+*.vsix
