@@ -76,6 +76,7 @@
 		"typescript-eslint": "^8.16.0"
 	},
 	"dependencies": {
-		"uuid": "^11.0.5"
+		"uuid": "^11.0.5",
+		"vsce": "^2.15.0"
 	}
 }
