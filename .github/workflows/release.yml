@@ -19,18 +19,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Set up Node.js (set to a compatible version)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16' # Ensure this matches your project's requirements
+          node-version: '18.18.0'  # Ensure this matches the requirements in your logs
+          cache: 'npm'  # Enable caching for faster builds
 
       # Step 3: Install dependencies and build package
       - name: Install dependencies
         run: npm install
 
       - name: Build the VSCode extension package
-        run: vcse package
+        run: npx @vscode/vsce package  # Use the updated @vscode/vsce package
 
       # Step 4: Determine the release tag
       - name: Extract release tag
