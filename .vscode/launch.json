@@ -12,7 +12,7 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-			"outFiles": ["${workspaceFolder}/out/**/*.js"],
+			"outFiles": ["${workspaceFolder}/extension/out/**/*.js"],
 			"preLaunchTask": "npm: watch",
 			"env": {
                 "VNC_URL": "https://jointheleague.org",
