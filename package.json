@@ -25,34 +25,17 @@
 				"command": "jointheleague.openVirtualDisplay",
 				"title": "Open Virtual Display",
 				"category": "League"
+				
 			}
 		],
 		"menus": {
-			"editor/title": [
+			"editor/title/run": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
-					"group": "navigation"
-				}
-			],
-			"view": [
-				{
-					"command": "jointheleague.openVirtualDisplay",
-					"group": "navigation"
-				}
-			],
-			"menuBar": [
-				{
-					"id": "League",
-					"label": "League",
-					"submenu": "leagueMenu"
-				}
-			],
-			"leagueMenu": [
-				{
-					"command": "jointheleague.openVirtualDisplay",
-					"group": "navigation"
+					"group": "league-group@1"
 				}
 			]
+			
 		}
 	},
 
