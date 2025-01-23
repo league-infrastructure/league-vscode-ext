@@ -1,13 +1,14 @@
 {
 	"name": "jtl-vscode",
 	"description": "League Extensions",
-	"version": "0.1.4",
+	"icon": "media/flag.png",
+	"version": "0.1.7",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/league-infrastructure/league-vscode-ext"
 	},
 	"engines": {
 		"vscode": "^1.74.0"
@@ -32,7 +33,8 @@
 			"editor/title/run": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
-					"group": "league-group@1"
+					"group": "league-group@1",
+					"when": "editorLangId == 'python' || editorLangId == 'java' "
 				}
 			]
 			
@@ -58,7 +60,7 @@
 		"@vscode/vsce": "^2.15.0"
 	},
 	"dependencies": {
-		"uuid": "^11.0.5"
+		
 		
 	}
 }

@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 
 
 export function activateVirtDisplay(context: vscode.ExtensionContext) {
+
+    console.log('Installing the virtual display to url: ' + process.env.VNC_URL);
+
     context.subscriptions.push(
         vscode.commands.registerCommand('jointheleague.openVirtualDisplay', async () => {
             // Get the VNC_URL from environment variables
@@ -12,6 +15,8 @@ export function activateVirtDisplay(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('VNC_URL environment variable is not set');
                 return;
             }
+
+            vscode.window.showInformationMessage('Open virtual display: ' + process.env.VNC_URL);
 
             try {
                 // Execute sequence of commands

@@ -3,7 +3,14 @@ import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
 
-import { v4 as uuidv4 } from 'uuid';
+function generateId(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
 
 interface KeystrokeData {
     timestamp: string;
@@ -34,7 +41,7 @@ export class KeystrokeMonitor {
     private keystrokeSubscription: vscode.Disposable | undefined;
  
     constructor() {
-        this.instanceId = uuidv4();
+        this.instanceId = generateId();
         this.reportingUrl = process.env.KST_REPORTING_URL || '';
         this.containerID = process.env.KST_CONTAINER_ID || 'unknown';
         this.reportRate = parseInt(process.env.KST_REPORT_RATE || '30', 10);
