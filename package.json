@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.1.7",
+	"version": "0.2.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -25,19 +25,27 @@
 			{
 				"command": "jointheleague.openVirtualDisplay",
 				"title": "Open Virtual Display",
-				"category": "League"
-				
+				"category": "League",
+				"icon": {
+					"light": "./media/monitor-icon-light.svg",
+					"dark": "./media/monitor-icon-dark.svg"
+				}
 			}
 		],
 		"menus": {
-			"editor/title/run": [
+			"editor/context": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
-					"group": "league-group@1",
 					"when": "editorLangId == 'python' || editorLangId == 'java' "
 				}
-			]
-			
+			], 
+			"editor/title": [
+				{
+					"command": "jointheleague.openVirtualDisplay",
+					"group": "navigation"
+				
+				}
+			]	
 		}
 	},
 
