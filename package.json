@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -50,7 +50,7 @@
 	},
 
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+
 		"compile": "tsc -p ./",
 		"lint": "eslint",
 		"watch": "tsc -w -p ./"
