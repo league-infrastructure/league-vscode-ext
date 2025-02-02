@@ -9,7 +9,8 @@ The extension provides a button to open a simpleBrowser on the url specified in 
 
 ### Running the extension
 
-run `npm install` then go to the launch menu and select `Run Extension`. 
+run `npm install` then go to the launch menu and select `Run Extension`, selecting the variant for the  `test-server.py`  reciever, or for the main `cspawner` flask app, 
+running locally on port 5000
 
 ## Packaging and distribution
 

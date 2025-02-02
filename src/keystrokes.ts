@@ -15,6 +15,8 @@ function generateId(): string {
 interface KeystrokeData {
     timestamp: string;
     containerID: string;
+    serviceID: string;
+    serviceName: string;
     keystrokes: number; // Latest report of number of keystrokes in the last interval
 	average30m: number; // Average keystrokes per second over the last 30 minutes
     reportingRate: number; // How often to report, reports per second. 
@@ -36,6 +38,8 @@ export class KeystrokeMonitor {
     private nReports: number = 0;
     private readonly reportingUrl: string;
     private readonly containerID: string;
+    private readonly serviceID: string;
+    private readonly serviceName: string;
     private readonly reportRate: number;
     private readonly debug: boolean;
     private keystrokeSubscription: vscode.Disposable | undefined;
@@ -44,6 +48,8 @@ export class KeystrokeMonitor {
         this.instanceId = generateId();
         this.reportingUrl = process.env.KST_REPORTING_URL || '';
         this.containerID = process.env.KST_CONTAINER_ID || 'unknown';
+        this.serviceID = process.env.KST_SERVICE_ID || 'unknown';
+        this.serviceName = process.env.KST_SERVICE_NAME || 'unknown';
         this.reportRate = parseInt(process.env.KST_REPORT_RATE || '30', 10);
         this.debug = process.env.KST_DEBUG === 'true' || false;
     
@@ -109,6 +115,8 @@ export class KeystrokeMonitor {
         const data: KeystrokeData = {
             timestamp: new Date().toISOString(),
             containerID: this.containerID,
+            serviceID: this.containerID,
+            serviceName: this.serviceName,
             instanceId: this.instanceId,
             keystrokes: this.totalKeystrokes,
             average30m: this.average30m,

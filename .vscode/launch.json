@@ -7,7 +7,7 @@
 	"configurations": [
 		{
 			// Use while true; do nc -l 8095; done for testing
-			"name": "Run Extension",
+			"name": "Run Extension (test-server.py)",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
@@ -18,6 +18,27 @@
                 "VNC_URL": "https://jointheleague.org",
 				"KST_REPORTING_URL": "http://localhost:8095",
                 "KST_CONTAINER_ID": "container-123",
+				"KST_SERVICE_ID": "service-123",
+				"KST_SERVICE_NAME": "service-name",
+				"KST_REPORT_RATE": "1",
+				"KST_DEBUG": "true",
+            }
+		},
+		{
+			// Use while true; do nc -l 8095; done for testing
+			"name": "Run Extension (cspawner)",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"outFiles": ["${workspaceFolder}/extension/out/**/*.js"],
+			"preLaunchTask": "npm: watch",
+			"env": {
+                "VNC_URL": "https://jointheleague.org",
+				"KST_REPORTING_URL": "http://localhost:5000/telem",
+                "KST_CONTAINER_ID": "container-123",
+				"KST_SERVICE_ID": "service-123",
+				"KST_SERVICE_NAME": "service-name",
 				"KST_REPORT_RATE": "1",
 				"KST_DEBUG": "true",
             }
