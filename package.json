@@ -31,20 +31,20 @@
 					"dark": "./media/monitor-icon-dark.svg"
 				}
 			},
-            {
-                "command": "jointheleague.closeVirtualDisplay",
-                "title": "Close Virtual Display",
-                "category": "League"
-            },
-            {
-                "command": "jointheleague.toggleVirtualDisplay",
-                "title": "Toggle Virtual Display",
-                "category": "League",
+			{
+				"command": "jointheleague.closeVirtualDisplay",
+				"title": "Close Virtual Display",
+				"category": "League"
+			},
+			{
+				"command": "jointheleague.toggleVirtualDisplay",
+				"title": "Toggle Virtual Display",
+				"category": "League",
 				"icon": {
 					"light": "./media/monitor-icon-light.svg",
 					"dark": "./media/monitor-icon-dark.svg"
 				}
-            },
+			},
 			{
 				"command": "lessonBrowser.openLesson",
 				"title": "Open Lesson",
