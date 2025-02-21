@@ -4,18 +4,32 @@ import { activateKeyRate } from './keystrokes';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
-
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
 
 
 export function activateLessonBrowser(context: vscode.ExtensionContext) {
 
     //
-    // Load the Syllabus file
+    // Load the Syllabus file from either the env var or the config
 
-    const jtlSyllabus = process.env.JTL_SYLLABUS;
+    const jtlSyllabusConfig = vscode.workspace.getConfiguration('jtl').get<string>('syllabus.path');
+    const jtlSyllabusEnv = process.env.JTL_SYLLABUS;
+
+    // determine which value to prefer
+    let jtlSyllabus;
+    const pref = vscode.workspace.getConfiguration('jtl').get<boolean>('syllabus.preferEnv');
+    if (pref){
+        jtlSyllabus = jtlSyllabusEnv || jtlSyllabusConfig ;
+        console.log(`Prefering (${pref}) environment variable ${jtlSyllabus}`);
+    } else {
+        jtlSyllabus = jtlSyllabusConfig || jtlSyllabusEnv;
+        console.log(`Prefering  (${pref}) configuration variable ${jtlSyllabus}`);
+    }
 
     if (!jtlSyllabus) {
-        vscode.window.showErrorMessage('JTL_SYLLABUS environment variable is not set.');
+        console.log('JTL_SYLLABUS environment variable is not set.');
         return;
     }
 
@@ -25,24 +39,53 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
         return;
     }
 
-    const coursePath = path.dirname(syllabusPath);
+    console.log('Loading syllabus from:', syllabusPath);
+
     let syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as any;
 
-    const completionFilePath = path.join(coursePath, 'lessonCompletion.json');
+    let coursePath = path.dirname(syllabusPath);
+    if (syllabus.module_dir) {
+        coursePath = path.resolve(coursePath, syllabus.module_dir);
+    }
+
+    if (!fs.existsSync(coursePath)) {
+        vscode.window.showErrorMessage(`Course directory not found at path: ${coursePath}`);
+        return;
+    } else {
+        console.log('Course directory:', coursePath);
+    }
+
+
+    // Check if the syllabus is in the correct format
+    if (!syllabus.modules || !Array.isArray(syllabus.modules) || syllabus.modules.length === 0 || !syllabus.modules[0].lessons || !syllabus.modules[0].lessons[0].name) {
+        console.log(`Invalid syllabus format in file ${syllabusPath}`);
+        return;
+    }
+
+    console.log('Syllabus loaded:', syllabus);
+
+    const completionFilePath = syllabusPath.replace(/\.yaml$/, '-completion.json');
     if (!fs.existsSync(completionFilePath)) {
         fs.writeFileSync(completionFilePath, JSON.stringify({}));
     }
     let completionStatus = JSON.parse(fs.readFileSync(completionFilePath, 'utf8'));
 
+    const storageDir = path.join(coursePath, 'store');
+
+    if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
+    }
+    
+
     //
     // Create the Tree Data Provider
 
-    const lessonProvider = new LessonProvider(syllabus, completionStatus);
+    const lessonProvider = new LessonProvider(syllabus, completionStatus, storageDir);
     const treeDataProvider = vscode.window.registerTreeDataProvider('lessonBrowserView', lessonProvider);
     context.subscriptions.push(treeDataProvider);
 
     const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {
-        openLesson(lessonItem.module, coursePath); // Pass the module of the LessonItem
+        openLesson(lessonItem.module, coursePath, storageDir); // Pass the module of the LessonItem
     });
     context.subscriptions.push(openLessonCommand);
 
@@ -56,8 +99,7 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(toggleCompletionCommand);
 
-    //lessonProvider.expandAll();
-
+   
     //
     // Watch the syllabus file for changes
 
@@ -69,6 +111,17 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push({ dispose: () => watcher.close() });
 
+    // Watch for changes in configuration
+    vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration('jtl.syllabus.path') || e.affectsConfiguration('jtl.syllabus.preferEnv')) {
+            console.log('Configuration change detected, reloading lesson browser...');
+            activateLessonBrowser(context);
+        }
+    });
+
+
+
+
     // Hide the activity bar
     vscode.workspace.getConfiguration('workbench').update('activityBar.visible', false, true);
 
@@ -76,29 +129,84 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
     // Turn off the minimap
     vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
 
+    console.log('Lesson browser activated');
+
 }
 
-async function openLesson(lesson: any, coursePath: string) {
+async function resolvePath(filePath: string, storageDir: string): Promise<string> {
+    if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+        return filePath;
+    }
+
+    const url = new URL(filePath);
+    const domainPath = path.join(storageDir, url.hostname, url.pathname);
+    const localPath = path.resolve(domainPath);
+
+    if (fs.existsSync(localPath)) {
+        return localPath;
+    }
+
+    await downloadFile(filePath, localPath);
+    return localPath;
+}
+
+function downloadFile(url: string, dest: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(dest);
+        const protocol = url.startsWith('https') ? https : http;
+
+        protocol.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
+                return;
+            }
+
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close(() => resolve());
+            });
+        }).on('error', (err) => {
+            fs.unlink(dest, () => reject(err));
+        });
+    });
+}
+
+async function openLesson(lesson: any, coursePath: string, storageDir: string) {
     await vscode.workspace.saveAll(false);
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 
     // Open lesson first if it exists
     if (lesson.lesson) {
-        const lessonPath = path.join(coursePath, lesson.lesson);
-        if (fs.existsSync(lessonPath)) {
-            if (path.extname(lessonPath) === '.md') {
-                const doc = await vscode.workspace.openTextDocument(lessonPath);
-                await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
-            } else {
-                const doc = await vscode.workspace.openTextDocument(lessonPath);
-                await vscode.window.showTextDocument(doc, { preview: false });
+        
+
+        if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
+            console.log('Browsing lesson:', lesson.lesson);
+            await vscode.commands.executeCommand('simpleBrowser.show', lesson.lesson);
+            
+        } else {
+
+            const lessonPath = path.join(coursePath, lesson.lesson);
+
+            if (fs.existsSync(lessonPath)) {
+
+                console.log('Opening lesson:', lessonPath);
+                    if (path.extname(lessonPath) === '.md') {
+                    const doc = await vscode.workspace.openTextDocument(lessonPath);
+                    await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
+                } else {
+                    const doc = await vscode.workspace.openTextDocument(lessonPath);
+                    await vscode.window.showTextDocument(doc, { preview: false });
+                }
             }
         }
     }
 
     // Then open exercise after lesson is fully loaded
     if (lesson.exercise) {
-        const exercisePath = path.join(coursePath, lesson.exercise);
+        let exercisePath = path.join(coursePath, lesson.exercise);
+        console.log('Opening exercise:', exercisePath);
+        exercisePath = await resolvePath(exercisePath, storageDir);
+        console.log('Resolved exercise path:', exercisePath);
         if (fs.existsSync(exercisePath)) {
             if (path.extname(exercisePath) === '.ipynb') {
                 await vscode.commands.executeCommand('vscode.openWith',
@@ -120,6 +228,15 @@ async function openLesson(lesson: any, coursePath: string) {
         await vscode.commands.executeCommand('jointheleague.closeVirtualDisplay');
     }
 
+    if (lesson.terminal) {
+        console.log('Opening terminal');
+        const terminal = vscode.window.createTerminal('Lesson Terminal');
+        terminal.show();
+    } else {
+        console.log('Closing all terminals');
+        vscode.window.terminals.forEach(terminal => terminal.dispose());
+    }
+
 
     console.log('Opened lesson:', lesson.name);
 }
@@ -136,7 +253,7 @@ class LessonProvider implements vscode.TreeDataProvider<LessonItem> {
         this._viewer = viewer;
     }
 
-    constructor(private course: any, private completionStatus: any) {}
+    constructor(private course: any, private completionStatus: any, private storageDir: string) {}
 
     updateSyllabus(newSyllabus: any) {
         this.course = newSyllabus;

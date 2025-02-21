@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.3.1",
+	"version": "0.4.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -104,6 +104,16 @@
 						"extensions": "hide"
 					},
 					"description": "Hide specific activity bar icons"
+				},
+				"jtl.syllabus.path": {
+					"type": "string",
+					"default": null,
+					"description": "Path to the JTL syllabus file."
+				},
+				"jtl.syllabus.preferEnv": {
+					"type": "boolean",
+					"default": false,
+					"description": "Determines if the environment variable overrides the config setting."
 				}
 			}
 		}

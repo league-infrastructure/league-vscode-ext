@@ -4,5 +4,7 @@
         "scm": "hide",
         "debug": "hide",
         "extensions": "hide"
-    }
+    },
+    "jtl.syllabus.path": "",
+    "jtl.syllabus.preferEnv": false
 }
