@@ -11,7 +11,11 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+                "${workspaceFolder}/test"
+				//"--debug-extension" // This enables debugging
+			],
 			"outFiles": ["${workspaceFolder}/extension/out/**/*.js"],
 			"preLaunchTask": "npm: watch",
 			"env": {
@@ -20,8 +24,10 @@
                 "KST_CONTAINER_ID": "container-123",
 				"KST_SERVICE_ID": "service-123",
 				"KST_SERVICE_NAME": "service-name",
-				"KST_REPORT_RATE": "1",
-				"KST_DEBUG": "true",
+				"KST_REPORT_RATE": "1000",
+				"KST_DEBUG": "false",
+				"KST_ROOT_DIR": "${workspaceRoot}/test",
+				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/syllabus.yaml"
             }
 		},
 		{
@@ -39,8 +45,9 @@
                 "KST_CONTAINER_ID": "container-123",
 				"KST_SERVICE_ID": "service-123",
 				"KST_SERVICE_NAME": "service-name",
-				"KST_REPORT_RATE": "1",
-				"KST_DEBUG": "true",
+				"KST_REPORT_RATE": "1000",
+				"KST_DEBUG": "false",
+				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/syllabus/test/syllabus.yaml"
             }
 		}
 	]

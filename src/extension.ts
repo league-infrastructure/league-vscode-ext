@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { activateVirtDisplay } from './virtdisplay';
 import { activateKeyRate } from './keystrokes';
+import { activateLessonBrowser } from './lessons';
 
 export function activate(context: vscode.ExtensionContext) {
     // Initialize browser feature
@@ -8,6 +9,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Initialize keystroke monitoring
     activateKeyRate(context);
+
+     // Initialize lesson browser
+    activateLessonBrowser(context);
+
 }
 
 export function deactivate() {

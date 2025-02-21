@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.2.2",
+	"version": "0.3.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -30,27 +30,85 @@
 					"light": "./media/monitor-icon-light.svg",
 					"dark": "./media/monitor-icon-dark.svg"
 				}
+			},
+            {
+                "command": "jointheleague.closeVirtualDisplay",
+                "title": "Close Virtual Display",
+                "category": "League"
+            },
+            {
+                "command": "jointheleague.toggleVirtualDisplay",
+                "title": "Toggle Virtual Display",
+                "category": "League",
+				"icon": {
+					"light": "./media/monitor-icon-light.svg",
+					"dark": "./media/monitor-icon-dark.svg"
+				}
+            },
+			{
+				"command": "lessonBrowser.openLesson",
+				"title": "Open Lesson",
+				"category": "League"
+			},
+			{
+				"command": "lessonBrowser.toggleCompletion",
+				"title": "Toggle Lesson Completion"
 			}
 		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "lessonBrowser",
+					"title": "Lesson Browser",
+					"icon": "./media/flag-light.svg"
+				}
+			]
+		},
+		"views": {
+			"lessonBrowser": [
+				{
+					"id": "lessonBrowserView",
+					"name": "Lessons"
+				}
+			]
+		},
 		"menus": {
 			"editor/context": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
 					"when": "editorLangId == 'python' || editorLangId == 'java' "
 				}
-			], 
+			],
 			"editor/title": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
 					"group": "navigation"
-				
 				}
-			]	
+			],
+			"view/item/context": [
+				{
+					"command": "lessonBrowser.toggleCompletion",
+					"when": "view == lessonBrowserView && viewItem == lesson"
+				}
+			]
+		},
+		"configuration": {
+			"title": "Student Workspace",
+			"properties": {
+				"workbench.activityBar.iconLocations": {
+					"type": "object",
+					"default": {
+						"search": "hide",
+						"scm": "hide",
+						"debug": "hide",
+						"extensions": "hide"
+					},
+					"description": "Hide specific activity bar icons"
+				}
+			}
 		}
 	},
-
 	"scripts": {
-
 		"compile": "tsc -p ./",
 		"lint": "eslint",
 		"watch": "tsc -w -p ./"
@@ -58,17 +116,17 @@
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",
 		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/js-yaml": "^4.0.9",
 		"@types/node": "^20",
 		"@types/uuid": "^10.0.0",
 		"@types/vscode": "^1.73.0",
 		"@types/vscode-webview": "^1.57.0",
+		"@vscode/vsce": "^2.15.0",
 		"eslint": "^9.13.0",
 		"typescript": "^5.7.2",
-		"typescript-eslint": "^8.16.0",
-		"@vscode/vsce": "^2.15.0"
+		"typescript-eslint": "^8.16.0"
 	},
 	"dependencies": {
-		
-		
+		"js-yaml": "^4.1.0"
 	}
 }

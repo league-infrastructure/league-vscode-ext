@@ -1,0 +1,8 @@
+{
+    "workbench.activityBar.iconLocations": {
+        "search": "hide",
+        "scm": "hide",
+        "debug": "hide",
+        "extensions": "hide"
+    }
+}
