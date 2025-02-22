@@ -86,15 +86,6 @@ export async function activateLessonBrowser(context: vscode.ExtensionContext) {
         return;
     }
 
-    console.log('Syllabus loaded:', syllabus);
-
-
-    // Create the completion status file if it doesn't exist, for storing and persisting completion status
-    const completionFilePath = syllabusPath.replace(/\.yaml$/, '-completion.json');
-    if (!fs.existsSync(completionFilePath)) {
-        fs.writeFileSync(completionFilePath, JSON.stringify({}));
-    }
-    let completionStatus = JSON.parse(fs.readFileSync(completionFilePath, 'utf8'));
 
     const storageDir = path.join(coursePath, 'store');
 
@@ -105,23 +96,19 @@ export async function activateLessonBrowser(context: vscode.ExtensionContext) {
 
     //
     // Create the Tree Data Provider
+    const completionFilePath = syllabusPath.replace(/\.yaml$/, '-completion.json');
 
-    const lessonProvider = new SyllabusProvider(syllabus, completionStatus, coursePath, storageDir);
+    const lessonProvider = new SyllabusProvider(syllabus, completionFilePath, coursePath, storageDir);
     const treeDataProvider = vscode.window.registerTreeDataProvider('lessonBrowserView', lessonProvider);
     context.subscriptions.push(treeDataProvider);
 
     const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {
-        lessonProvider.openLesson(lessonItem.lesson); // Pass the module of the LessonItem
+        lessonProvider.openLesson(lessonItem); 
     });
     context.subscriptions.push(openLessonCommand);
 
-    const toggleCompletionCommand = vscode.commands.registerCommand('lessonBrowser.toggleCompletion', (lesson) => {
-        if (!lesson.module.lessons) { // Only toggle if it's a leaf node
-            const lessonId = lesson.module.name;
-            completionStatus[lessonId] = !completionStatus[lessonId];
-            fs.writeFileSync(completionFilePath, JSON.stringify(completionStatus));
-            lessonProvider.refresh();
-        }
+    const toggleCompletionCommand = vscode.commands.registerCommand('lessonBrowser.toggleCompletion', (lesson?) => {
+        lessonProvider.toggleCompletion(lesson);
     });
     context.subscriptions.push(toggleCompletionCommand);
 
@@ -140,7 +127,7 @@ export async function activateLessonBrowser(context: vscode.ExtensionContext) {
     // Watch for changes in configuration
     vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('jtl.syllabus.path') || e.affectsConfiguration('jtl.syllabus.preferEnv')) {
-            console.log('Configuration change detected, reloading lesson browser...');
+
             activateLessonBrowser(context);
         }
     });
@@ -214,12 +201,23 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         this._onDidChangeTreeData.event;
 
     private _viewer?: vscode.TreeView<SyllabusItem>;
+    private lastOpenedLessonItem?: LessonItem;
+    public completionStatus: any = {};
 
     constructor(
         private course: any, 
-        public completionStatus: any,
+        private completionFilePath: any,
         private coursePath: string, 
-        private storageDir: string) {}
+        private storageDir: string) {
+
+        // Create the completion status file if it doesn't exist, for storing and persisting completion status
+        if (!fs.existsSync(completionFilePath)) {
+            fs.writeFileSync(completionFilePath, JSON.stringify({}));
+        }
+
+        this.completionStatus = JSON.parse(fs.readFileSync(completionFilePath, 'utf8'));    
+            
+    }
 
     setTreeView(viewer: vscode.TreeView<SyllabusItem>) {
         this._viewer = viewer;
@@ -236,6 +234,7 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     }
 
     getTreeItem(element: SyllabusItem): vscode.TreeItem {
+        element.update();
         return element;
     }
 
@@ -248,19 +247,42 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         return element.getChildren(element);
     }
 
-    async openLesson(lesson: any ) {
+    toggleCompletion(arg?: LessonItem | vscode.Uri ): void {
+
+        if (!arg) {
+            return this.toggleCompletion(this.lastOpenedLessonItem);
+        } else if ('scheme' in arg) {
+            // It is a URI, from the button in the title bar of the editor menu
+
+            // Could lookup the path to the editor file to be sure we have the right item, but
+            // the open editor ought to be the one selected in the tree view. 
+            return this.toggleCompletion(this.lastOpenedLessonItem);
+        } else {
+            // From the right click context menu in the Tree View. 
+            const lessonId = arg.lesson.name;
+            this.completionStatus[lessonId] = !this.completionStatus[lessonId];
+            fs.writeFileSync(this.completionFilePath, JSON.stringify(this.completionStatus));
+            this.refresh();
+        }
+    }
+
+    async openLesson(lessonItem: LessonItem ) {
+
+        let lesson = lessonItem.lesson;
+
+
         await vscode.workspace.saveAll(false);
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 
         // Open lesson first if it exists
         if (lesson.lesson) {
             if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
-                console.log('Browsing lesson:', lesson.lesson);
+           
                 await vscode.commands.executeCommand('simpleBrowser.show', lesson.lesson);
             } else {
                 const lessonPath = path.join(this.coursePath, lesson.lesson);
                 if (fs.existsSync(lessonPath)) {
-                    console.log('Opening lesson:', lessonPath);
+                
                     if (path.extname(lessonPath) === '.md') {
                         const doc = await vscode.workspace.openTextDocument(lessonPath);
                         await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
@@ -275,9 +297,9 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         // Then open exercise after lesson is fully loaded
         if (lesson.exercise) {
             let exercisePath = path.join(this.coursePath, lesson.exercise);
-            console.log('Opening exercise:', exercisePath);
+
             exercisePath = await resolvePath(exercisePath, this.storageDir);
-            console.log('Resolved exercise path:', exercisePath);
+
             if (fs.existsSync(exercisePath)) {
                 if (path.extname(exercisePath) === '.ipynb') {
                     await vscode.commands.executeCommand('vscode.openWith',
@@ -292,23 +314,23 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
 
         if (lesson.display) {
-            console.log('Opening virtual display');
             await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
         } else {
-            console.log('Closing virtual display');
             await vscode.commands.executeCommand('jointheleague.closeVirtualDisplay');
         }
 
         if (lesson.terminal) {
-            console.log('Opening terminal');
+
             const terminal = vscode.window.createTerminal('Lesson Terminal');
             terminal.show();
         } else {
-            console.log('Closing all terminals');
+
             vscode.window.terminals.forEach(terminal => terminal.dispose());
         }
 
-        console.log('Opened lesson:', lesson.name);
+        this.lastOpenedLessonItem = lessonItem;
+
+
     }
 
 }
@@ -330,7 +352,7 @@ abstract class SyllabusItem extends vscode.TreeItem {
         super(data.name, collapsibleState);
     }
 
-    abstract getTreeItem(element: SyllabusItem): vscode.TreeItem;
+    abstract update(): void;
     abstract getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]>;
    
 }
@@ -342,24 +364,25 @@ class ModuleItem extends SyllabusItem {
         this.contextValue = 'module';
     }
 
-    getTreeItem(element: SyllabusItem): vscode.TreeItem {
+    update(): void {
         const allChildrenComplete = this.module.lessons.every((lesson: any) => this.provider.completionStatus[lesson.name]);
         this.iconPath =  allChildrenComplete ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
-        return element;
+       
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
         if (!this.module.lessons) {
             return Promise.resolve([]);
         }
-        return Promise.resolve(this.module.lessons.map((lesson: any) => new LessonItem(lesson.name, lesson)));
+        return Promise.resolve(this.module.lessons.map((lesson: any) => new LessonItem(this.provider, lesson)));
     }
 }
 
 class LessonItem extends SyllabusItem {
 
-    constructor( public provider: SyllabusProvider, public readonly lesson: any) {
-        super(lesson);
+    constructor( public provider: SyllabusProvider, public lesson: any) {
+        const cState = lesson.lessons && lesson.lessons.length > 0 ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+        super(lesson, cState);
         this.contextValue = 'lesson';
 
         this.command = {
@@ -369,12 +392,16 @@ class LessonItem extends SyllabusItem {
         };
     }
 
-    getTreeItem(element: SyllabusItem): vscode.TreeItem {
+    update(): void {
+        console.log('getTreeItem', this.lesson.name, this.provider.completionStatus[this.lesson.name]);
         this.iconPath =  this.provider.completionStatus[this.lesson.name] ? LessonItem.checkOnIcon : LessonItem.checkOffIcon;
-        return this;
+
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
-        throw new Error('Method not implemented.');
+        if (!this.lesson.lessons) {
+            return Promise.resolve([]);
+        }
+        return Promise.resolve(this.lesson.lessons.map((lesson: any) => new LessonItem(this.provider, lesson)));
     }
 }
