@@ -14,6 +14,7 @@ interface Lesson {
     lesson?: string; // Some lessons have a markdown reference instead
     display?: boolean;
     lessons?: Lesson[]; // Nested lessons (e.g., "Turtle Tricks A")
+    terminal?: boolean;
 }
 
 interface Module {
@@ -234,11 +235,13 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         //this.expandAll();
     }
 
+
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     getTreeItem(element: SyllabusItem): vscode.TreeItem {
+        
         element.update();
 
         // Expand the first module on initial open. 
@@ -251,7 +254,7 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
-       
+        console.log('SyllabusProvider.getChildren', element);
         if (!element) {
             return Promise.resolve(this.syllabus.modules.map((module: any) => new ModuleItem(this, module)));
         }
@@ -269,13 +272,14 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             // Could lookup the path to the editor file to be sure we have the right item, but
             // the open editor ought to be the one selected in the tree view. 
             return this.toggleCompletion(this.lastOpenedLessonItem);
-        } else {
-            // From the right click context menu in the Tree View. 
-            const lessonId = arg.lesson.name;
-            this.completionStatus[lessonId] = !this.completionStatus[lessonId];
-            fs.writeFileSync(this.completionFilePath, JSON.stringify(this.completionStatus));
-            this.refresh();
-        }
+        } 
+
+        // From the right click context menu in the Tree View. 
+        const lessonId = arg.lesson.name;
+        this.completionStatus[lessonId] = !this.completionStatus[lessonId];
+        fs.writeFileSync(this.completionFilePath, JSON.stringify(this.completionStatus));
+        this.refresh();
+    
     }
 
     async openLesson(lessonItem: LessonItem ) {
@@ -371,31 +375,41 @@ abstract class SyllabusItem extends vscode.TreeItem {
 
 class ModuleItem extends SyllabusItem {
 
-    constructor( public provider: SyllabusProvider,   public readonly module: any) {
+    constructor( public provider: SyllabusProvider,   public readonly module: Module) {
         super(module);
         this.contextValue = 'module';
     }
 
     update(): void {
-        const allChildrenComplete = this.module.lessons.every((lesson: any) => this.provider.completionStatus[lesson.name]);
+
+        const allChildrenComplete = this.module.lessons?.every((lesson: any) => 
+            this.provider.completionStatus[lesson.name]) ?? false;
+
         this.iconPath =  allChildrenComplete ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
        
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
+
         if (!this.module.lessons) {
             return Promise.resolve([]);
         }
-        return Promise.resolve(this.module.lessons.map((lesson: any) => new LessonItem(this.provider, lesson)));
+        return Promise.resolve(this.module.lessons.map((lesson: any) => new LessonItem(this.provider, this, lesson)));
     }
 }
 
 class LessonItem extends SyllabusItem {
 
-    constructor( public provider: SyllabusProvider, public lesson: any) {
+    constructor( public provider: SyllabusProvider, public parent: ModuleItem|LessonItem,  public lesson: Lesson) {
         const cState = lesson.lessons && lesson.lessons.length > 0 ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+        
         super(lesson, cState);
-        this.contextValue = 'lesson';
+
+        if (lesson.lessons) {
+            this.contextValue = 'lessonSet';
+        } else {
+            this.contextValue = 'lesson';
+        }
 
         this.command = {
             command: 'lessonBrowser.openLesson',
@@ -404,16 +418,23 @@ class LessonItem extends SyllabusItem {
         };
     }
 
-    update(): void {
-        console.log('getTreeItem', this.lesson.name, this.provider.completionStatus[this.lesson.name]);
-        this.iconPath =  this.provider.completionStatus[this.lesson.name] ? LessonItem.checkOnIcon : LessonItem.checkOffIcon;
+    update(): void {     
+        
+        if (this.lesson.lessons) {
+            const allChildrenComplete = this.lesson.lessons.every((lesson: any) => 
+                this.provider.completionStatus[lesson.name]) ?? false;
+            this.iconPath =  allChildrenComplete ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
+        } else {
+            this.iconPath =  this.provider.completionStatus[this.lesson.name] ? LessonItem.checkOnIcon : LessonItem.checkOffIcon;
+        }
 
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
+        console.log('LessonItem.getChildren', element);
         if (!this.lesson.lessons) {
             return Promise.resolve([]);
         }
-        return Promise.resolve(this.lesson.lessons.map((lesson: any) => new LessonItem(this.provider, lesson)));
+        return Promise.resolve(this.lesson.lessons.map((lesson: any) => new LessonItem(this.provider, this,  lesson)));
     }
 }
