@@ -1,38 +1,15 @@
-# Ignore dependencies
-
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-
-# Ignore Python virtual environments
-.venv/
-env/
-venv/
-
-# Ignore version control and CI/CD metadata
-.git/
+.vscode/**
+.vscode-test/**
+src/**
 .gitignore
-.github/
-
-# Ignore IDE and editor settings
-.vscode/
-.vscodeignore
-
-# Ignore TypeScript source maps and test files
+.yarnrc
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/eslint.config.mjs
 **/*.map
-**/*.test.ts
-**/*.spec.ts
+**/*.ts
+**/.vscode-test.*
 
-# Ignore logs and temp files
-*.log
-npm-debug.log*
-yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Ignore build artifacts except for the output folder
-out/
-dist/
-
-# Do not ignore the compiled extension output
-!extension/out/
