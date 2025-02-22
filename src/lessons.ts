@@ -8,8 +8,28 @@ import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
 
+interface Lesson {
+    name: string;
+    exercise?: string;
+    lesson?: string; // Some lessons have a markdown reference instead
+    display?: boolean;
+    lessons?: Lesson[]; // Nested lessons (e.g., "Turtle Tricks A")
+}
 
-export function activateLessonBrowser(context: vscode.ExtensionContext) {
+interface Module {
+    name: string;
+    overview?: string;
+    lessons?: Lesson[];
+}
+
+interface Syllabus {
+    name: string;
+    description: string;
+    module_dir: string;
+    modules: Module[];
+}
+
+export async function activateLessonBrowser(context: vscode.ExtensionContext) {
 
     //
     // Load the Syllabus file from either the env var or the config
@@ -39,9 +59,13 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
         return;
     }
 
+    //
+    // Load the Syllabus Data
+    // 
+
     console.log('Loading syllabus from:', syllabusPath);
 
-    let syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as any;
+    let syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as Syllabus;
 
     let coursePath = path.dirname(syllabusPath);
     if (syllabus.module_dir) {
@@ -64,6 +88,8 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
 
     console.log('Syllabus loaded:', syllabus);
 
+
+    // Create the completion status file if it doesn't exist, for storing and persisting completion status
     const completionFilePath = syllabusPath.replace(/\.yaml$/, '-completion.json');
     if (!fs.existsSync(completionFilePath)) {
         fs.writeFileSync(completionFilePath, JSON.stringify({}));
@@ -80,12 +106,12 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
     //
     // Create the Tree Data Provider
 
-    const lessonProvider = new LessonProvider(syllabus, completionStatus, storageDir);
+    const lessonProvider = new SyllabusProvider(syllabus, completionStatus, coursePath, storageDir);
     const treeDataProvider = vscode.window.registerTreeDataProvider('lessonBrowserView', lessonProvider);
     context.subscriptions.push(treeDataProvider);
 
     const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {
-        openLesson(lessonItem.module, coursePath, storageDir); // Pass the module of the LessonItem
+        lessonProvider.openLesson(lessonItem.lesson); // Pass the module of the LessonItem
     });
     context.subscriptions.push(openLessonCommand);
 
@@ -120,17 +146,25 @@ export function activateLessonBrowser(context: vscode.ExtensionContext) {
     });
 
 
-
-
     // Hide the activity bar
-    vscode.workspace.getConfiguration('workbench').update('activityBar.visible', false, true);
-
+    await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
 
     // Turn off the minimap
-    vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
+    await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
 
     console.log('Lesson browser activated');
 
+    // Unhide the activity bar when the extension is deactivated
+     context.subscriptions.push({
+        dispose: () => {
+            vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
+        }
+    });
+
+}
+
+export function deactivateLessonBrowser() {
+    console.log('Lesson browser deactivated');
 }
 
 async function resolvePath(filePath: string, storageDir: string): Promise<string> {
@@ -171,89 +205,25 @@ function downloadFile(url: string, dest: string): Promise<void> {
     });
 }
 
-async function openLesson(lesson: any, coursePath: string, storageDir: string) {
-    await vscode.workspace.saveAll(false);
-    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
-    // Open lesson first if it exists
-    if (lesson.lesson) {
-        
+    private _onDidChangeTreeData: vscode.EventEmitter<SyllabusItem | undefined | void> = 
+        new vscode.EventEmitter<SyllabusItem | undefined | void>();
 
-        if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
-            console.log('Browsing lesson:', lesson.lesson);
-            await vscode.commands.executeCommand('simpleBrowser.show', lesson.lesson);
-            
-        } else {
-
-            const lessonPath = path.join(coursePath, lesson.lesson);
-
-            if (fs.existsSync(lessonPath)) {
-
-                console.log('Opening lesson:', lessonPath);
-                    if (path.extname(lessonPath) === '.md') {
-                    const doc = await vscode.workspace.openTextDocument(lessonPath);
-                    await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
-                } else {
-                    const doc = await vscode.workspace.openTextDocument(lessonPath);
-                    await vscode.window.showTextDocument(doc, { preview: false });
-                }
-            }
-        }
-    }
-
-    // Then open exercise after lesson is fully loaded
-    if (lesson.exercise) {
-        let exercisePath = path.join(coursePath, lesson.exercise);
-        console.log('Opening exercise:', exercisePath);
-        exercisePath = await resolvePath(exercisePath, storageDir);
-        console.log('Resolved exercise path:', exercisePath);
-        if (fs.existsSync(exercisePath)) {
-            if (path.extname(exercisePath) === '.ipynb') {
-                await vscode.commands.executeCommand('vscode.openWith',
-                    vscode.Uri.file(exercisePath), 'jupyter-notebook');
-                await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
-            } else {
-                const doc = await vscode.workspace.openTextDocument(exercisePath);
-                await vscode.window.showTextDocument(doc, { preview: false });
-                await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
-            }
-        }
-    }
-
-    if (lesson.display) {
-        console.log('Opening virtual display');
-        await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
-    } else {
-        console.log('Closing virtual display');
-        await vscode.commands.executeCommand('jointheleague.closeVirtualDisplay');
-    }
-
-    if (lesson.terminal) {
-        console.log('Opening terminal');
-        const terminal = vscode.window.createTerminal('Lesson Terminal');
-        terminal.show();
-    } else {
-        console.log('Closing all terminals');
-        vscode.window.terminals.forEach(terminal => terminal.dispose());
-    }
-
-
-    console.log('Opened lesson:', lesson.name);
-}
-
-class LessonProvider implements vscode.TreeDataProvider<LessonItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<LessonItem | undefined | void> = 
-        new vscode.EventEmitter<LessonItem | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<LessonItem | undefined | void> = 
+    readonly onDidChangeTreeData: vscode.Event<SyllabusItem | undefined | void> = 
         this._onDidChangeTreeData.event;
 
-    private _viewer?: vscode.TreeView<LessonItem>;
+    private _viewer?: vscode.TreeView<SyllabusItem>;
 
-    setTreeView(viewer: vscode.TreeView<LessonItem>) {
+    constructor(
+        private course: any, 
+        public completionStatus: any,
+        private coursePath: string, 
+        private storageDir: string) {}
+
+    setTreeView(viewer: vscode.TreeView<SyllabusItem>) {
         this._viewer = viewer;
     }
-
-    constructor(private course: any, private completionStatus: any, private storageDir: string) {}
 
     updateSyllabus(newSyllabus: any) {
         this.course = newSyllabus;
@@ -265,69 +235,146 @@ class LessonProvider implements vscode.TreeDataProvider<LessonItem> {
         this._onDidChangeTreeData.fire();
     }
 
-    async expandAll(): Promise<void> {
-      
-        if (!this._viewer) return;
-
-        const expand = async (element?: LessonItem) => {
-
-            const children = await this.getChildren(element) || [];
-
-            for (const child of children) {
-                if (this._viewer){
-                    await this._viewer.reveal(child, { expand: true });
-                }
-                await expand(child);
-            }
-        };
-
-        await expand();
+    getTreeItem(element: SyllabusItem): vscode.TreeItem {
+        return element;
     }
 
-    getTreeItem(element: LessonItem): vscode.TreeItem {
-        const treeItem = element;
-        const lessonId = element.module.name;
-        if (!element.module.lessons) { // Only show completion icon for leaf nodes
-            treeItem.iconPath = this.completionStatus[lessonId] ? new vscode.ThemeIcon('check') : new vscode.ThemeIcon('circle-outline');
-            treeItem.command = {
-                command: 'lessonBrowser.openLesson',
-                title: 'Open Lesson',
-                arguments: [element]
-            };
-        } else {
-            const allChildrenComplete = element.module.lessons.every((lesson: any) => this.completionStatus[lesson.name]);
-            treeItem.iconPath = allChildrenComplete ? new vscode.ThemeIcon('check') : new vscode.ThemeIcon('circle-outline');
-        }
-        treeItem.contextValue = 'lesson';
-        return treeItem;
-    }
-
-    getChildren(element?: LessonItem): Thenable<LessonItem[]> {
+    getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
+       
         if (!element) {
-            return Promise.resolve(this.course.modules.map((module: any) => new LessonItem(module.name, module, vscode.TreeItemCollapsibleState.Collapsed)));
-        } else if (element.module) {
-            return Promise.resolve(element.module.lessons.map((lesson: any) => new LessonItem(lesson.name, lesson, lesson.lessons ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None)));
+            return Promise.resolve(this.course.modules.map((module: any) => new ModuleItem(this, module)));
+        }
+
+        return element.getChildren(element);
+    }
+
+    async openLesson(lesson: any ) {
+        await vscode.workspace.saveAll(false);
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+
+        // Open lesson first if it exists
+        if (lesson.lesson) {
+            if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
+                console.log('Browsing lesson:', lesson.lesson);
+                await vscode.commands.executeCommand('simpleBrowser.show', lesson.lesson);
+            } else {
+                const lessonPath = path.join(this.coursePath, lesson.lesson);
+                if (fs.existsSync(lessonPath)) {
+                    console.log('Opening lesson:', lessonPath);
+                    if (path.extname(lessonPath) === '.md') {
+                        const doc = await vscode.workspace.openTextDocument(lessonPath);
+                        await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
+                    } else {
+                        const doc = await vscode.workspace.openTextDocument(lessonPath);
+                        await vscode.window.showTextDocument(doc, { preview: false });
+                    }
+                }
+            }
+        }
+
+        // Then open exercise after lesson is fully loaded
+        if (lesson.exercise) {
+            let exercisePath = path.join(this.coursePath, lesson.exercise);
+            console.log('Opening exercise:', exercisePath);
+            exercisePath = await resolvePath(exercisePath, this.storageDir);
+            console.log('Resolved exercise path:', exercisePath);
+            if (fs.existsSync(exercisePath)) {
+                if (path.extname(exercisePath) === '.ipynb') {
+                    await vscode.commands.executeCommand('vscode.openWith',
+                        vscode.Uri.file(exercisePath), 'jupyter-notebook');
+                    await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
+                } else {
+                    const doc = await vscode.workspace.openTextDocument(exercisePath);
+                    await vscode.window.showTextDocument(doc, { preview: false });
+                    await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
+                }
+            }
+        }
+
+        if (lesson.display) {
+            console.log('Opening virtual display');
+            await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
         } else {
+            console.log('Closing virtual display');
+            await vscode.commands.executeCommand('jointheleague.closeVirtualDisplay');
+        }
+
+        if (lesson.terminal) {
+            console.log('Opening terminal');
+            const terminal = vscode.window.createTerminal('Lesson Terminal');
+            terminal.show();
+        } else {
+            console.log('Closing all terminals');
+            vscode.window.terminals.forEach(terminal => terminal.dispose());
+        }
+
+        console.log('Opened lesson:', lesson.name);
+    }
+
+}
+
+abstract class SyllabusItem extends vscode.TreeItem {
+
+    //iconPath = {
+    //    light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
+    //    dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
+    //};
+
+    protected static readonly checkOnIcon = new vscode.ThemeIcon('check');
+    protected static readonly checkOffIcon = new vscode.ThemeIcon('circle-outline');
+
+    constructor(
+        public readonly data: Lesson | Module,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed
+    ) {
+        super(data.name, collapsibleState);
+    }
+
+    abstract getTreeItem(element: SyllabusItem): vscode.TreeItem;
+    abstract getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]>;
+   
+}
+
+class ModuleItem extends SyllabusItem {
+
+    constructor( public provider: SyllabusProvider,   public readonly module: any) {
+        super(module);
+        this.contextValue = 'module';
+    }
+
+    getTreeItem(element: SyllabusItem): vscode.TreeItem {
+        const allChildrenComplete = this.module.lessons.every((lesson: any) => this.provider.completionStatus[lesson.name]);
+        this.iconPath =  allChildrenComplete ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
+        return element;
+    }
+
+    getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
+        if (!this.module.lessons) {
             return Promise.resolve([]);
         }
+        return Promise.resolve(this.module.lessons.map((lesson: any) => new LessonItem(lesson.name, lesson)));
     }
 }
 
-class LessonItem extends vscode.TreeItem {
-    constructor(
-        public readonly label: string,
-        public readonly module: any,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState 
-    ) {
-        super(label, collapsibleState);
+class LessonItem extends SyllabusItem {
+
+    constructor( public provider: SyllabusProvider, public readonly lesson: any) {
+        super(lesson);
         this.contextValue = 'lesson';
-        if (!module.lessons) {
-            this.command = {
-                command: 'lessonBrowser.openLesson',
-                title: 'Open Lesson',
-                arguments: [this] // Pass the LessonItem instance
-            };
-        }
-        this.contextValue = 'lesson';
+
+        this.command = {
+            command: 'lessonBrowser.openLesson',
+            title: 'Open Lesson',
+            arguments: [this]
+        };
+    }
+
+    getTreeItem(element: SyllabusItem): vscode.TreeItem {
+        this.iconPath =  this.provider.completionStatus[this.lesson.name] ? LessonItem.checkOnIcon : LessonItem.checkOffIcon;
+        return this;
+    }
+
+    getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
+        throw new Error('Method not implemented.');
     }
 }
