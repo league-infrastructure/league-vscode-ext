@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { activateVirtDisplay } from './virtdisplay';
 import { activateKeyRate } from './keystrokes';
-import { activateLessonBrowser } from './lessons';
+import { activateLessonBrowser, deactivateLessonBrowser } from './lessons';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     // Initialize browser feature
     activateVirtDisplay(context);
 
@@ -17,4 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     // Cleanup will be handled automatically through the disposables
+
+    // Deactivate lesson browser
+    deactivateLessonBrowser();
 }
