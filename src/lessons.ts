@@ -20,6 +20,7 @@ interface Module {
     name: string;
     overview?: string;
     lessons?: Lesson[];
+    isOpen?: boolean;
 }
 
 interface Syllabus {
@@ -192,6 +193,8 @@ function downloadFile(url: string, dest: string): Promise<void> {
     });
 }
 
+
+
 class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     private _onDidChangeTreeData: vscode.EventEmitter<SyllabusItem | undefined | void> = 
@@ -204,8 +207,10 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     private lastOpenedLessonItem?: LessonItem;
     public completionStatus: any = {};
 
+    private firstExpanded: boolean = false;
+
     constructor(
-        private course: any, 
+        private syllabus: any, 
         private completionFilePath: any,
         private coursePath: string, 
         private storageDir: string) {
@@ -224,7 +229,7 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     }
 
     updateSyllabus(newSyllabus: any) {
-        this.course = newSyllabus;
+        this.syllabus = newSyllabus;
         this._onDidChangeTreeData.fire();
         //this.expandAll();
     }
@@ -235,13 +240,20 @@ class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     getTreeItem(element: SyllabusItem): vscode.TreeItem {
         element.update();
+
+        // Expand the first module on initial open. 
+        if (element instanceof ModuleItem && !this.firstExpanded) {
+            element.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            this.firstExpanded = true;
+        }
+
         return element;
     }
 
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]> {
        
         if (!element) {
-            return Promise.resolve(this.course.modules.map((module: any) => new ModuleItem(this, module)));
+            return Promise.resolve(this.syllabus.modules.map((module: any) => new ModuleItem(this, module)));
         }
 
         return element.getChildren(element);
@@ -347,7 +359,7 @@ abstract class SyllabusItem extends vscode.TreeItem {
 
     constructor(
         public readonly data: Lesson | Module,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed
+        public  collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed
     ) {
         super(data.name, collapsibleState);
     }
