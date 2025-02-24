@@ -33,17 +33,17 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
    
     constructor(private context: vscode.ExtensionContext, private syllabus: Syllabus, private sylFs: SylFs) {
         
-        this.updateSyllabus(syllabus)
+        
 
         this.register(context);
 
         this.root = new RootItem(this, syllabus);
 
-        console.log('WALK Root:', this.root);
+        this.updateSyllabus(syllabus)
 
-        this.walk(this.root, (item: SyllabusItem) => {
-            console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
-        });
+        //this.walk(this.root, (item: SyllabusItem) => {
+        //    console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
+        //});
 
         console.log('ItemMap:', this.itemMap);
     }
@@ -178,7 +178,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
                     const lessonItem = this.itemMap.get(id);
                     console.log(`Setting completion status for: ${id}, ${lessonItem?.data.name}`);
                     if (lessonItem && lessonItem instanceof LessonItem) {
-                        
+                        lessonItem.setCompletionStatus(true);
                     }
                     
                 });
@@ -206,6 +206,21 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
     }
 
+    nextIncomepleteLesson(lesson: LessonItem): LessonItem | null {
+
+        let nodeId = lesson.nodeId || 0;
+
+        for (let i = nodeId + 1; i < this.nextNodeId; i++) {
+            const nextLesson = this.itemMap.get(i);
+            if (nextLesson && nextLesson instanceof LessonItem && !nextLesson.getCompletionStatus()) {
+                return nextLesson;
+            }
+        }
+
+        return null;
+
+    }
+
     toggleCompletion(arg?: LessonItem | vscode.Uri |  null): void {
 
         console.log('Toggle completion:', arg);
@@ -231,15 +246,14 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         this.refresh();
 
         if (arg.getCompletionStatus()){        // Get the next lesson and open it if it exists
-            const nextLessonId = (arg.nodeId||0) + 1;
-            const nextLessonItem = this.itemMap.get(nextLessonId);
+            const nextLessonItem = this.nextIncomepleteLesson(arg);
 
             if (nextLessonItem && nextLessonItem instanceof LessonItem) {
                 this.openLesson(nextLessonItem);
                 console.log('Opening next lesson:', nextLessonItem.lesson.name, this._viewer);
                 
             } else {
-                console.log(`No next lesson for id ${nextLessonId}`, nextLessonItem);
+                console.log(`No next lesson after ${arg.nodeId}`);
             }
         }
     }
@@ -318,7 +332,8 @@ export abstract class SyllabusItem extends vscode.TreeItem {
     //    dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
     //};
     protected static readonly checkOnIcon = new vscode.ThemeIcon('check');
-    protected static readonly checkOffIcon = new vscode.ThemeIcon('square-outline');
+    protected static readonly checkAllIcon = new vscode.ThemeIcon('check-all');
+    protected static readonly checkOffIcon = new vscode.ThemeIcon('primitive-square');
     protected static readonly folderIcon = new vscode.ThemeIcon('folder');
 
 
@@ -346,7 +361,7 @@ export abstract class SyllabusItem extends vscode.TreeItem {
 
     setCompletionStatus(completed: boolean): void {
         this.completed = completed;
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
+        
     }
 
     getCompletionStatus(): boolean {
@@ -361,11 +376,11 @@ export abstract class SyllabusItem extends vscode.TreeItem {
         return `Name: ${this.label}\nSPath: ${this.getSPath()}\nCompletion State: ${this.getCompletionStatus() ? 'Completed' : 'Incomplete'}\nContext Value: ${this.contextValue}\nNode ID: ${this.nodeId}`;
     }
 
+
 }
 
 export class RootItem extends SyllabusItem {
 
-    
     constructor(public provider: SyllabusProvider, public readonly syllabus: Syllabus) {
         super(syllabus, null, vscode.TreeItemCollapsibleState.Expanded);
         this.contextValue = 'root';
@@ -382,7 +397,7 @@ export class RootItem extends SyllabusItem {
 
     updateCompletionStatus(): void {
         this.completed  = this.children.every((c: SyllabusItem) => c.completed );
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
+        this.iconPath = this.completed ? SyllabusItem.checkAllIcon : SyllabusItem.folderIcon;
     }
 
 }
@@ -416,7 +431,8 @@ export class ModuleItem extends SyllabusItem {
 
     updateCompletionStatus(): void {
         this.completed  = this.children.every((c: SyllabusItem) => c.completed );
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
+        this.iconPath = this.completed ? SyllabusItem.checkAllIcon : SyllabusItem.folderIcon;
+        this.collapsibleState = this.completed ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Expanded;
         this.parent?.updateCompletionStatus();
     }
 }
@@ -440,7 +456,9 @@ export class LessonSetItem extends SyllabusItem {
     updateCompletionStatus(): void {
 
         this.completed  = this.children.every((c: SyllabusItem) => c.completed);
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
+        this.iconPath = this.completed ? SyllabusItem.checkAllIcon : SyllabusItem.folderIcon;
+        this.collapsibleState = this.completed ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Expanded;
+       
         this.parent?.updateCompletionStatus();
 
     }
@@ -469,6 +487,8 @@ export class LessonItem extends SyllabusItem {
         //console.log('Lesson item created:', this.spath, lesson.name);
 
         this.tooltip = this.generateTooltip();
+
+        this.iconPath =  SyllabusItem.checkOffIcon;
     }
 
     updateCompletionStatus(): void {
