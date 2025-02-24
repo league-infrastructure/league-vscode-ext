@@ -13,9 +13,11 @@ import { Syllabus, Lesson, Module } from './models';
 
 export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
-    private _onDidChangeTreeData: vscode.EventEmitter<SyllabusItem | undefined | void> = new vscode.EventEmitter<SyllabusItem | undefined | void>();
+    private _onDidChangeTreeData: vscode.EventEmitter<SyllabusItem | undefined | void> = 
+        new vscode.EventEmitter<SyllabusItem | undefined | void>();
 
-    readonly onDidChangeTreeData: vscode.Event<SyllabusItem | undefined | void> = this._onDidChangeTreeData.event;
+    readonly onDidChangeTreeData: vscode.Event<SyllabusItem | undefined | void> = 
+        this._onDidChangeTreeData.event;
 
     private _viewer?: vscode.TreeView<SyllabusItem>;
 
@@ -33,13 +35,32 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         
         this.updateSyllabus(syllabus)
 
-        // Create and register the TreeView
+        this.register(context);
+
+        this.root = new RootItem(this, syllabus);
+
+        console.log('WALK Root:', this.root);
+
+        this.walk(this.root, (item: SyllabusItem) => {
+            console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
+        });
+
+        console.log('ItemMap:', this.itemMap);
+    }
+
+    public register(context: vscode.ExtensionContext): any {
+
         let viewId = 'lessonBrowserView'; // must match the id in package.json
+
+        const treeDataProvider = vscode.window.registerTreeDataProvider(viewId, this);
+        
+        //context.subscriptions.push(treeDataProvider);
+
         this._viewer = vscode.window.createTreeView(viewId, {
             treeDataProvider: this
         });
         context.subscriptions.push(this._viewer);
-     
+        
         // Register an event listener for the onDidChangeSelection event
         this._viewer.onDidChangeSelection(event => {
             if (event.selection.length > 0) {
@@ -51,18 +72,36 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             } else {
                 this.activeLessonItem = null;
             }
-            console.log('Selection changed:', this.activeLessonItem?.data.name);
+            console.log("onDidChangeSelection",this.activeLessonItem?.data.name, event); // breakpoint here for debug
 
         });
 
+        // setup: events
 
-        this.root = new RootItem(this, syllabus);
-
-        console.log('WALK Root:', this.root);
-
-        this.walk(this.root, (item: SyllabusItem) => {
-            console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
+        this._viewer.onDidCollapseElement(e => {
+            console.log("onDidCollapseElement",e); // breakpoint here for debug
         });
+        this._viewer.onDidChangeVisibility(e => {
+            console.log("onDidChangeVisibility",e); // breakpoint here for debug
+        });
+        this._viewer.onDidExpandElement(e => {
+            console.log("onDidExpandElement",e); // breakpoint here for debug
+        });
+
+        // Register the commands
+    
+        const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {
+            this.openLesson(lessonItem); 
+        });
+        context.subscriptions.push(openLessonCommand);
+    
+        const toggleCompletionCommand = vscode.commands.registerCommand('lessonBrowser.toggleCompletion', (lessonItem?: LessonItem) => {
+            this.toggleCompletion(lessonItem);
+        });
+        context.subscriptions.push(toggleCompletionCommand);
+
+
+
     }
 
     updateSyllabus(newSyllabus: Syllabus) {
@@ -98,7 +137,6 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             this.firstExpanded = true;
         }
 
-        element.update();
 
         return element;
     }
@@ -121,9 +159,10 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
      * @param item Set the serial nodeId for the node and add it to the Node map
      */
     enumerateItem(item: SyllabusItem): void {
-        this.nextNodeId++;
+        
         item.nodeId = this.nextNodeId;
-        this.itemMap.set(this.nextNodeId, item);
+        this.itemMap.set(item.nodeId, item);
+        this.nextNodeId++;
     }
 
     readCompletion(): void {
@@ -139,8 +178,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
                     const lessonItem = this.itemMap.get(id);
                     console.log(`Setting completion status for: ${id}, ${lessonItem?.data.name}`);
                     if (lessonItem && lessonItem instanceof LessonItem) {
-                        lessonItem.update();
-
+                        
                     }
                     
                 });
@@ -172,6 +210,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
         console.log('Toggle completion:', arg);
 
+
         if (!arg) {
             return this.toggleCompletion(this.activeLessonItem);
         } else if ('scheme' in arg) {
@@ -181,21 +220,26 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             return this.toggleCompletion(this.activeLessonItem);
         }
 
-        // From the right click context menu in the Tree View. 
-        const lessonId = 0
-        this.itemMap.get(lessonId)?.setCompletionStatus(!arg.getCompletionStatus());
+        if (!arg || !(arg instanceof LessonItem ) ) {
+            console.log('ToggleCompletion: Argument is not a LessonItem:', arg);
+            return;
+        }
+
+        arg.setCompletionStatus(!arg.getCompletionStatus());
         this.writeCompletion();
        
         this.refresh();
 
         if (arg.getCompletionStatus()){        // Get the next lesson and open it if it exists
-            const nextLessonId = lessonId + 1;
+            const nextLessonId = (arg.nodeId||0) + 1;
             const nextLessonItem = this.itemMap.get(nextLessonId);
 
             if (nextLessonItem && nextLessonItem instanceof LessonItem) {
                 this.openLesson(nextLessonItem);
                 console.log('Opening next lesson:', nextLessonItem.lesson.name, this._viewer);
-                this._viewer?.reveal(nextLessonItem, { select: true, focus: true });
+                
+            } else {
+                console.log(`No next lesson for id ${nextLessonId}`, nextLessonItem);
             }
         }
     }
@@ -203,7 +247,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     async openLesson(lessonItem: LessonItem) {
 
         let lesson = lessonItem.lesson;
-
+        this._viewer?.reveal(lessonItem, { select: true, focus: true });
 
         await vscode.workspace.saveAll(false);
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
@@ -275,6 +319,7 @@ export abstract class SyllabusItem extends vscode.TreeItem {
     //};
     protected static readonly checkOnIcon = new vscode.ThemeIcon('check');
     protected static readonly checkOffIcon = new vscode.ThemeIcon('square-outline');
+    protected static readonly folderIcon = new vscode.ThemeIcon('folder');
 
 
     public children: SyllabusItem[] = [];
@@ -289,26 +334,24 @@ export abstract class SyllabusItem extends vscode.TreeItem {
     ) {
         
         super(data.name, collapsibleState);
-        this.iconPath = new vscode.ThemeIcon('folder');
+        
     }
 
-    
+
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]>{
         return Promise.resolve(this.children);
     }
 
-    update(): void {
-
-    }
+    abstract updateCompletionStatus(): void ;
 
     setCompletionStatus(completed: boolean): void {
-        
+        this.completed = completed;
+        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
     }
 
     getCompletionStatus(): boolean {
         return this.completed; 
     }
-
 
     getSPath(): string {
         return this.spath;
@@ -333,14 +376,13 @@ export class RootItem extends SyllabusItem {
             this.children.push(new ModuleItem(provider, module, index));
         });
 
-        this.iconPath = new vscode.ThemeIcon('folder');
-
+        this.iconPath = SyllabusItem.folderIcon;
 
     }
 
-    update(): void {
-        this.completed = this.children.every((c: SyllabusItem) => c.getCompletionStatus());
-        this.iconPath = this.getCompletionStatus() ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
+    updateCompletionStatus(): void {
+        this.completed  = this.children.every((c: SyllabusItem) => c.completed );
+        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
     }
 
 }
@@ -369,21 +411,13 @@ export class ModuleItem extends SyllabusItem {
         } else {
             this.collapsibleState = vscode.TreeItemCollapsibleState.None;
         }
+        this.iconPath = SyllabusItem.folderIcon;
     }
 
-    setCompletionStatus(completed: boolean): void {
-        this.completed = completed;   
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon; 
-        this.parent?.update()
-        
-    }
-
-    updateCompletionState(): void {
-
-        this.completed  = this.children.every((c: SyllabusItem) => c.getCompletionStatus() || false);
-
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
-
+    updateCompletionStatus(): void {
+        this.completed  = this.children.every((c: SyllabusItem) => c.completed );
+        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
+        this.parent?.updateCompletionStatus();
     }
 }
 
@@ -400,6 +434,15 @@ export class LessonSetItem extends SyllabusItem {
         });
 
         this.tooltip = this.generateTooltip();
+        this.iconPath = SyllabusItem.folderIcon;
+    }
+
+    updateCompletionStatus(): void {
+
+        this.completed  = this.children.every((c: SyllabusItem) => c.completed);
+        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.folderIcon;
+        this.parent?.updateCompletionStatus();
+
     }
 
 }
@@ -428,22 +471,17 @@ export class LessonItem extends SyllabusItem {
         this.tooltip = this.generateTooltip();
     }
 
-    setCompletionStatus(completed: boolean): void {
-        this.completed = completed;   
-        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon; 
-        this.parent?.update()
+    updateCompletionStatus(): void {
         
     }
 
-    update(): void {
-
-        if (this.lesson.lessons) {
-            const allChildrenComplete = this.children.every((c: SyllabusItem) => c.getCompletionStatus() || false);
-            this.iconPath = allChildrenComplete ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon;
-        } else {
-            const nodeId = 0
-            this.iconPath = nodeId && this.getCompletionStatus() ? LessonItem.checkOnIcon : LessonItem.checkOffIcon;
-        }
+    setCompletionStatus(completed: boolean): void {
+        this.completed = completed;   
+        this.iconPath = this.completed ? SyllabusItem.checkOnIcon : SyllabusItem.checkOffIcon; 
+        this.parent?.updateCompletionStatus();
+        
     }
+
+    
 
 }

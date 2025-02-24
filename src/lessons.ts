@@ -111,18 +111,7 @@ function createTreeDP(context: vscode.ExtensionContext, syllabus: Syllabus, sylF
     // Create the Tree Data Provider
 
     const lessonProvider = new SyllabusProvider(context, syllabus, sylFs);
-    const treeDataProvider = vscode.window.registerTreeDataProvider('lessonBrowserView', lessonProvider);
-    context.subscriptions.push(treeDataProvider);
 
-    const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {
-        lessonProvider.openLesson(lessonItem); 
-    });
-    context.subscriptions.push(openLessonCommand);
-
-    const toggleCompletionCommand = vscode.commands.registerCommand('lessonBrowser.toggleCompletion', (lessonItem?: LessonItem) => {
-        lessonProvider.toggleCompletion(lessonItem);
-    });
-    context.subscriptions.push(toggleCompletionCommand);
 
     return lessonProvider;
 }
