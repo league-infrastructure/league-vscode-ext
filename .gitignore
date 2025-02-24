@@ -11,3 +11,4 @@ tsconfig.lsif.json
 *.tsbuildinfo
 .venv
 *.vsix
+keystrokes/*

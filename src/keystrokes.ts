@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
+import * as crypto from 'crypto';
 
 function generateId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -24,6 +25,22 @@ interface KeystrokeData {
     fileStats: Record<string, FileKeystrokeStats>; // Keystroke statistics per file
 }
 
+
+function hashKeystrokeData(data: KeystrokeData): string {
+    const hash = crypto.createHash('sha256');
+
+    // Exclude the timestamp property from the hash calculation
+    const { timestamp, ...dataWithoutTimestamp } = data;
+
+    // Convert the object to a JSON string and update the hash
+    hash.update(JSON.stringify(dataWithoutTimestamp));
+
+    // Return the hash value as a hexadecimal string
+    return hash.digest('hex');
+}
+
+
+
 interface FileKeystrokeStats {
     keystrokes: number;
     lastModified: string;
@@ -36,6 +53,7 @@ export class KeystrokeMonitor {
     private interval: NodeJS.Timeout | undefined;
     private average30m: number = 0;
     private nReports: number = 0;
+    private readonly reportDir: string;
     private readonly reportingUrl: string;
     private readonly containerID: string;
     private readonly serviceID: string;
@@ -43,9 +61,12 @@ export class KeystrokeMonitor {
     private readonly reportRate: number;
     private readonly debug: boolean;
     private keystrokeSubscription: vscode.Disposable | undefined;
+    private lastReport: KeystrokeData | undefined;
  
-    constructor() {
+    constructor(context: vscode.ExtensionContext) {
+        
         this.instanceId = generateId();
+        this.reportDir = process.env.KST_REPORT_DIR || vscode.extensions.getExtension(context.extension.id)?.extensionPath || '';
         this.reportingUrl = process.env.KST_REPORTING_URL || '';
         this.containerID = process.env.KST_CONTAINER_ID || 'unknown';
         this.serviceID = process.env.KST_SERVICE_ID || 'unknown';
@@ -53,8 +74,16 @@ export class KeystrokeMonitor {
         this.reportRate = parseInt(process.env.KST_REPORT_RATE || '30', 10);
         this.debug = process.env.KST_DEBUG === 'true' || false;
     
-        if (!this.reportingUrl) {
-            throw new Error('REPORTING_URL environment variable is not set');
+        if (this.reportingUrl) {
+            console.log(`Keystrokes will be reported to: ${this.reportingUrl}`);
+        } else {
+            console.log('Keystrokes will not be reported, no reporting URL');
+        }
+
+        if (this.reportDir) {
+            console.log(`Keystroke reports will be written to: ${this.reportDir}`);
+        } else {
+            console.log('Keystroke reports will not be written to disk no report dir');
         }
 
         console.log('Keystroke monitor initialized with params: ', 
@@ -100,7 +129,8 @@ export class KeystrokeMonitor {
         }
     }
 
-    private async reportMetrics() {
+    private makeKeyStrokeData(): KeystrokeData {
+
         const reportingIntervalsIn30Minutes = (30 * 60) / this.reportRate;
         const queueSize = Math.min(++this.nReports, reportingIntervalsIn30Minutes);
         const currentKPS = this.totalKeystrokes / this.reportRate;
@@ -111,7 +141,7 @@ export class KeystrokeMonitor {
         this.fileKeystrokes.forEach((stats, path) => {
             fileStats[path] = stats;
         });
-    
+
         const data: KeystrokeData = {
             timestamp: new Date().toISOString(),
             containerID: this.containerID,
@@ -124,22 +154,20 @@ export class KeystrokeMonitor {
             fileStats: fileStats
         };
 
-        try {
-            await this.sendHttpRequest(data);
-        } catch (error) {
-            if (error instanceof AggregateError) {
-                for (const err of error.errors) {
-                    if (err.code === 'ECONNREFUSED' && this.debug) {
-                        console.error('Connection refused. Is the telemetry server running?');
-                    } else if (err.code === 'ETIMEDOUT' && this.debug) {
-                        console.error('Connection timed out. Is the telemetry server running?');
-                    }
-                }
-            }
-        } finally {
-            // Reset total keystroke counter but keep per-file stats
-            this.totalKeystrokes = 0;
-        }
+        return data
+    }
+
+    private async reportMetrics() {
+
+        const data = this.makeKeyStrokeData();
+
+        //console.log('Reporting keystrokes:', data);
+
+        this.sendHttpRequest(data);
+        this.writeToReportDir(data);
+        this.totalKeystrokes = 0;
+        this.lastReport = data;
+        
     }
 
     public stop() {
@@ -160,7 +188,13 @@ export class KeystrokeMonitor {
         this.stop();
     }
 
-    private async sendHttpRequest(data: KeystrokeData): Promise<void> {
+    private async _sendHttpRequest(data: KeystrokeData): Promise<void> {
+
+        if (!this.reportingUrl) {
+            return
+        }
+
+        
         return new Promise((resolve, reject) => {
             const url = new URL(this.reportingUrl);
             const options = {
@@ -199,12 +233,70 @@ export class KeystrokeMonitor {
             req.end();
         });
     }
-}
 
+
+    private async sendHttpRequest(data: KeystrokeData): Promise<void> {
+        try {
+            await this._sendHttpRequest(data);
+        } catch (error) {
+            if (error instanceof AggregateError) {
+                for (const err of error.errors) {
+                    if (err.code === 'ECONNREFUSED' && this.debug) {
+                        console.error('Connection refused. Is the telemetry server running?');
+                    } else if (err.code === 'ETIMEDOUT' && this.debug) {
+                        console.error('Connection timed out. Is the telemetry server running?');
+                    }
+                }
+            }
+        } 
+    }
+
+    private async writeToReportDir(data: KeystrokeData): Promise<void> {
+
+        if (!this.reportDir) {
+            return;
+        }
+
+        let ts = new Date().toISOString().split('.')[0] + 'Z';
+
+        const fileBase = `${this.reportDir}/keystrokes/${this.instanceId}`;
+
+        let filePath = '';
+        let lastPath =  fileBase + '/last.json'
+
+        // If the data is the same as the last report, write to the last.json file, so 
+        // we still get a record of the last report even if it's the same as the current one, 
+        // but we don't clog up the directory. 
+        if (this.lastReport && hashKeystrokeData(data) === hashKeystrokeData(this.lastReport)) {
+            filePath = lastPath;
+        }  else {
+            filePath = fileBase + `/${ts}.json`;
+
+            // Delete the last.json file if it exists
+            try { 
+                const lastUri = vscode.Uri.file(lastPath);
+                const lastFileExists = await vscode.workspace.fs.stat(lastUri).then(() => true, () => false);
+                if (lastFileExists) {
+                    vscode.workspace.fs.delete(lastUri, { useTrash: false });
+                }
+            } catch (error) {
+                if (this.debug) {
+                    console.error('Failed to delete last.json:', error);
+                }
+            }
+        }
+
+        // Write the data to the file
+        await vscode.workspace.fs.writeFile(vscode.Uri.file(filePath), Buffer.from(JSON.stringify(data, null, 2)));
+    }
+}
 
 export function activateKeyRate(context: vscode.ExtensionContext) {
     try {
-        const monitor = new KeystrokeMonitor();
+
+
+
+        const monitor = new KeystrokeMonitor(context);
         
         // Start monitoring
         monitor.start();

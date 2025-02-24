@@ -21,3 +21,4 @@ export function deactivate() {
     // Deactivate lesson browser
     deactivateLessonBrowser();
 }
+
