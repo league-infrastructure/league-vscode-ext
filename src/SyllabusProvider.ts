@@ -30,11 +30,8 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     private nextNodeId: number = 0;
     private activeLessonItem: LessonItem | null = null;
 
-   
     constructor(private context: vscode.ExtensionContext, private syllabus: Syllabus, private sylFs: SylFs) {
         
-        
-
         this.register(context);
 
         this.root = new RootItem(this, syllabus);
@@ -44,6 +41,8 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         //this.walk(this.root, (item: SyllabusItem) => {
         //    console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
         //});
+
+        this.openLesson(null);
 
         console.log('ItemMap:', this.itemMap);
     }
@@ -100,8 +99,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         });
         context.subscriptions.push(toggleCompletionCommand);
 
-
-
+        const clearCompletionCommand = vscode.commands.registerCommand('lessonBrowser.clearCompletion', () => {
+            this.clearCompletion();
+            this.openLesson(0);
+        });
+        context.subscriptions.push(clearCompletionCommand);
     }
 
     updateSyllabus(newSyllabus: Syllabus) {
@@ -160,9 +162,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
      */
     enumerateItem(item: SyllabusItem): void {
         
-        item.nodeId = this.nextNodeId;
-        this.itemMap.set(item.nodeId, item);
-        this.nextNodeId++;
+        if(item instanceof LessonItem) {
+            item.nodeId = this.nextNodeId;
+            this.itemMap.set(item.nodeId, item);
+            this.nextNodeId++;
+        }
     }
 
     readCompletion(): void {
@@ -206,9 +210,17 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
     }
 
-    nextIncomepleteLesson(lesson: LessonItem): LessonItem | null {
+    nextIncompleteLesson(lesson: LessonItem | number | null): LessonItem | null {
 
-        let nodeId = lesson.nodeId || 0;
+        let nodeId;
+
+        if (lesson === null) {
+            nodeId = -1;
+        } else if (typeof lesson === 'number') {
+            nodeId = lesson
+        } else {
+            nodeId = lesson.nodeId || 0;
+        }
 
         for (let i = nodeId + 1; i < this.nextNodeId; i++) {
             const nextLesson = this.itemMap.get(i);
@@ -219,6 +231,16 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
         return null;
 
+    }
+
+    clearCompletion(): void {
+        this.itemMap.forEach((item, id) => {
+            if (item instanceof LessonItem) {
+                item.setCompletionStatus(false);
+            }
+        });
+        this.writeCompletion();
+        this.refresh();
     }
 
     toggleCompletion(arg?: LessonItem | vscode.Uri |  null): void {
@@ -246,7 +268,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         this.refresh();
 
         if (arg.getCompletionStatus()){        // Get the next lesson and open it if it exists
-            const nextLessonItem = this.nextIncomepleteLesson(arg);
+            const nextLessonItem = this.nextIncompleteLesson(arg);
 
             if (nextLessonItem && nextLessonItem instanceof LessonItem) {
                 this.openLesson(nextLessonItem);
@@ -258,7 +280,20 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
     }
 
-    async openLesson(lessonItem: LessonItem) {
+    async openLesson(lessonItem: LessonItem | number | null) {
+
+        if (lessonItem == null) {
+            lessonItem = this.nextIncompleteLesson(null);
+            
+        } else if (typeof lessonItem === 'number') {
+            lessonItem = this.itemMap.get(lessonItem) as LessonItem;
+        }
+
+        if (lessonItem == null) {
+            console.log('No lesson to open');
+            return;
+        }
+
 
         let lesson = lessonItem.lesson;
         this._viewer?.reveal(lessonItem, { select: true, focus: true });
@@ -410,7 +445,7 @@ export class ModuleItem extends SyllabusItem {
         this.spath = "m"+index.toString();
         this.tooltip = this.generateTooltip();
         
-        provider.enumerateItem(this);
+       
         //console.log('Module item created:', this.spath, module.name);
 
         if (module.lessons) {

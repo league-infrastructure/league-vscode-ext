@@ -57,7 +57,14 @@
 					"light": "./media/check-on-light.svg",
 					"dark": "./media/check-on-dark.svg"
 				}
-			}
+				
+			},
+			{
+                "command": "lessonBrowser.clearCompletion",
+                "title": "Clear Lesson Completion",
+                "category": "League"
+            }
+
 		],
 		"viewsContainers": {
 			"activitybar": [
