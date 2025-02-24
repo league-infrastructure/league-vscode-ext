@@ -7,9 +7,50 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { resolvePath } from './lessons';
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
+
 import { SylFs } from './models';
 import { Syllabus, Lesson, Module } from './models';
+
+export async function resolvePath(filePath: string, storageDir: string): Promise<string> {
+    if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+        return filePath;
+    }
+
+    const url = new URL(filePath);
+    const domainPath = path.join(storageDir, url.hostname, url.pathname);
+    const localPath = path.resolve(domainPath);
+
+    if (fs.existsSync(localPath)) {
+        return localPath;
+    }
+
+    await downloadFile(filePath, localPath);
+    return localPath;
+}
+
+function downloadFile(url: string, dest: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(dest);
+        const protocol = url.startsWith('https') ? https : http;
+
+        protocol.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
+                return;
+            }
+
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close(() => resolve());
+            });
+        }).on('error', (err) => {
+            fs.unlink(dest, () => reject(err));
+        });
+    });
+}
 
 export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
@@ -30,13 +71,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     private nextNodeId: number = 0;
     private activeLessonItem: LessonItem | null = null;
 
-    constructor(private context: vscode.ExtensionContext, private syllabus: Syllabus, private sylFs: SylFs) {
+    constructor(context: vscode.ExtensionContext, syllabus: Syllabus, private sylFs: SylFs) {
         
         this.register(context);
 
-        this.root = new RootItem(this, syllabus);
-
-        this.updateSyllabus(syllabus)
+        this.root = this.updateSyllabus(syllabus)
 
         //this.walk(this.root, (item: SyllabusItem) => {
         //    console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
@@ -44,7 +83,6 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
         this.openLesson(null);
 
-        console.log('ItemMap:', this.itemMap);
     }
 
     public register(context: vscode.ExtensionContext): any {
@@ -71,7 +109,6 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             } else {
                 this.activeLessonItem = null;
             }
-            console.log("onDidChangeSelection",this.activeLessonItem?.data.name, event); // breakpoint here for debug
 
         });
 
@@ -106,11 +143,13 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         context.subscriptions.push(clearCompletionCommand);
     }
 
-    updateSyllabus(newSyllabus: Syllabus) {
-        this.syllabus = newSyllabus;
+    updateSyllabus(syllabus: Syllabus) : RootItem {
+
+        this.root = new RootItem(this, syllabus);
 
         this.readCompletion();
         this._onDidChangeTreeData.fire();
+        return this.root
     }
 
     /**
@@ -173,14 +212,13 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         try {
             const data = fs.readFileSync(this.sylFs.completionFilePath, 'utf8');
             const completedLessons = JSON.parse(data);
-            console.log('Read completion file:', completedLessons);
-            console.log('ItemMap:', this.itemMap);
+
             if (Array.isArray(completedLessons)) {
 
                 completedLessons.forEach((id: number) => {
                     
                     const lessonItem = this.itemMap.get(id);
-                    console.log(`Setting completion status for: ${id}, ${lessonItem?.data.name}`);
+
                     if (lessonItem && lessonItem instanceof LessonItem) {
                         lessonItem.setCompletionStatus(true);
                     }
@@ -245,9 +283,6 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     toggleCompletion(arg?: LessonItem | vscode.Uri |  null): void {
 
-        console.log('Toggle completion:', arg);
-
-
         if (!arg) {
             return this.toggleCompletion(this.activeLessonItem);
         } else if ('scheme' in arg) {
@@ -272,7 +307,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
             if (nextLessonItem && nextLessonItem instanceof LessonItem) {
                 this.openLesson(nextLessonItem);
-                console.log('Opening next lesson:', nextLessonItem.lesson.name, this._viewer);
+              
                 
             } else {
                 console.log(`No next lesson after ${arg.nodeId}`);
@@ -387,16 +422,14 @@ export abstract class SyllabusItem extends vscode.TreeItem {
         
     }
 
-
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]>{
         return Promise.resolve(this.children);
     }
 
-    abstract updateCompletionStatus(): void ;
+    updateCompletionStatus(): void {}
 
     setCompletionStatus(completed: boolean): void {
         this.completed = completed;
-        
     }
 
     getCompletionStatus(): boolean {
@@ -420,8 +453,6 @@ export class RootItem extends SyllabusItem {
         super(syllabus, null, vscode.TreeItemCollapsibleState.Expanded);
         this.contextValue = 'root';
 
-        console.log('Root item created:');
-
         syllabus.modules.forEach((module, index) => {
             this.children.push(new ModuleItem(provider, module, index));
         });
@@ -444,9 +475,7 @@ export class ModuleItem extends SyllabusItem {
         this.contextValue = 'module';
         this.spath = "m"+index.toString();
         this.tooltip = this.generateTooltip();
-        
-       
-        //console.log('Module item created:', this.spath, module.name);
+
 
         if (module.lessons) {
             this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
@@ -519,15 +548,9 @@ export class LessonItem extends SyllabusItem {
 
         this.spath = parent.getSPath()+'/'+"l"+index.toString();
 
-        //console.log('Lesson item created:', this.spath, lesson.name);
-
         this.tooltip = this.generateTooltip();
 
         this.iconPath =  SyllabusItem.checkOffIcon;
-    }
-
-    updateCompletionStatus(): void {
-        
     }
 
     setCompletionStatus(completed: boolean): void {
@@ -538,5 +561,4 @@ export class LessonItem extends SyllabusItem {
     }
 
     
-
 }

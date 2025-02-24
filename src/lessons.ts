@@ -4,10 +4,8 @@ import { activateKeyRate } from './keystrokes';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as https from 'https';
-import * as http from 'http';
-import { URL } from 'url';
-import { LessonItem, SyllabusProvider } from './SyllabusProvider';
+
+import { SyllabusProvider } from './SyllabusProvider';
 import { SylFs, Syllabus } from './models';
 
 class NoSyllabusError extends Error {
@@ -105,17 +103,6 @@ function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext) : SylFs {
     };
 }
 
-function createTreeDP(context: vscode.ExtensionContext, syllabus: Syllabus, sylFs: SylFs) : SyllabusProvider {
-
-    //
-    // Create the Tree Data Provider
-
-    const lessonProvider = new SyllabusProvider(context, syllabus, sylFs);
-
-
-    return lessonProvider;
-}
-
 function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, context: vscode.ExtensionContext) : void {
     //
     // Watch the syllabus file for changes
@@ -132,27 +119,41 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
     // Watch for changes in configuration
     vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('jtl.syllabus.path') || e.affectsConfiguration('jtl.syllabus.preferEnv')) {
-
-            activateLessonBrowser(context);
+            let syllabus = yaml.load(fs.readFileSync(sylFs.syllabusPath, 'utf8')) as Syllabus;
+            lessonProvider.updateSyllabus(syllabus);
         }
     });
 }
 
-export async function activateLessonBrowser(context: vscode.ExtensionContext) {
+function createTreeDP(context: vscode.ExtensionContext) : SyllabusProvider | null {
+
+    //
+    // Create the Tree Data Provider
 
     let syllabus = loadSyllabus(context);
 
-    if (!syllabus) {
+    if (!syllabus) {        
         console.log('No syllabus found, skipping lesson browser activation');
-        return;
+        return null;
     }
-
 
     let sylFs: SylFs = setupFs(syllabus, context);
 
-    let lessonProvider = createTreeDP(context, syllabus, sylFs);
+    const lessonProvider = new SyllabusProvider(context, syllabus, sylFs);
 
     setupFileWatcher(sylFs, lessonProvider, context);
+
+    return lessonProvider;
+}
+
+export async function activateLessonBrowser(context: vscode.ExtensionContext) {
+
+    
+    let lessonProvider = createTreeDP(context);
+
+    if (!lessonProvider) {
+        return;
+    }
 
 
     /**
@@ -178,43 +179,7 @@ export function deactivateLessonBrowser() {
     console.log('Lesson browser deactivated');
 }
 
-export async function resolvePath(filePath: string, storageDir: string): Promise<string> {
-    if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
-        return filePath;
-    }
 
-    const url = new URL(filePath);
-    const domainPath = path.join(storageDir, url.hostname, url.pathname);
-    const localPath = path.resolve(domainPath);
-
-    if (fs.existsSync(localPath)) {
-        return localPath;
-    }
-
-    await downloadFile(filePath, localPath);
-    return localPath;
-}
-
-function downloadFile(url: string, dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(dest);
-        const protocol = url.startsWith('https') ? https : http;
-
-        protocol.get(url, (response) => {
-            if (response.statusCode !== 200) {
-                reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
-                return;
-            }
-
-            response.pipe(file);
-            file.on('finish', () => {
-                file.close(() => resolve());
-            });
-        }).on('error', (err) => {
-            fs.unlink(dest, () => reject(err));
-        });
-    });
-}
 
 
 
