@@ -160,8 +160,10 @@ export async function activateLessonBrowser(context: vscode.ExtensionContext) {
      * Reconfigure the views and settings to make the lesson browser simpler for students. 
      */
 
+    await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
     await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
     await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
+
 
     // Unhide the activity bar when the extension is deactivated
      context.subscriptions.push({
@@ -178,9 +180,4 @@ export async function activateLessonBrowser(context: vscode.ExtensionContext) {
 export function deactivateLessonBrowser() {
     console.log('Lesson browser deactivated');
 }
-
-
-
-
-
 

@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { activateVirtDisplay } from './virtdisplay';
 import { activateKeyRate } from './keystrokes';
 import { activateLessonBrowser, deactivateLessonBrowser } from './lessons';
+import { activateJupyterDefault } from './jupykernel';
+import { activateActions } from './actions';
 
 export async function activate(context: vscode.ExtensionContext) {
     // Initialize browser feature
@@ -12,6 +14,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
      // Initialize lesson browser
     activateLessonBrowser(context);
+
+    // Initialize Jupyter kernel
+    activateJupyterDefault(context);
+
+    // Initialize actions
+    activateActions(context);
 
 }
 

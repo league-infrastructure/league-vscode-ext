@@ -124,6 +124,9 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             console.log("onDidExpandElement",e); // breakpoint here for debug
         });
 
+        // Actions
+
+
         // Register the commands
     
         const openLessonCommand = vscode.commands.registerCommand('lessonBrowser.openLesson', (lessonItem: LessonItem) => {

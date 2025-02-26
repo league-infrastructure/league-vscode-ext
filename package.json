@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.5.2",
+	"version": "0.5.6",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -21,6 +21,30 @@
 	],
 	"main": "./extension/out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "lessonBrowser",
+					"title": "Lesson Browser",
+					"icon": "./media/flag-light.svg"
+				}
+			]
+		},
+		"views": {
+			"lessonBrowser": [
+				{
+					"id": "lessonBrowserView",
+					"name": "Lessons",
+					"initialSize": 5 
+				},
+				{
+					"id": "lessonActionsView",
+					"name": "Actions",
+					"type": "webview",
+					"initialSize": 1
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "jointheleague.openVirtualDisplay",
@@ -57,32 +81,14 @@
 					"light": "./media/check-on-light.svg",
 					"dark": "./media/check-on-dark.svg"
 				}
-				
 			},
 			{
-                "command": "lessonBrowser.clearCompletion",
-                "title": "Clear Lesson Completion",
-                "category": "League"
-            }
-
+				"command": "lessonBrowser.clearCompletion",
+				"title": "Clear Lesson Completion",
+				"category": "League"
+			}
 		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "lessonBrowser",
-					"title": "Lesson Browser",
-					"icon": "./media/flag-light.svg"
-				}
-			]
-		},
-		"views": {
-			"lessonBrowser": [
-				{
-					"id": "lessonBrowserView",
-					"name": "Lessons"
-				}
-			]
-		},
+
 		"menus": {
 			"editor/context": [
 				{
@@ -94,7 +100,6 @@
 					"when": "editorLangId == 'python' || editorLangId == 'java' "
 				}
 			],
-
 			"editor/title": [
 				{
 					"command": "jointheleague.openVirtualDisplay",
@@ -157,6 +162,8 @@
 		"typescript-eslint": "^8.16.0"
 	},
 	"dependencies": {
+		"@types/fs-extra": "^11.0.4",
+		"@vscode/python-extension": "^1.0.5",
 		"js-yaml": "^4.1.0"
 	}
 }
