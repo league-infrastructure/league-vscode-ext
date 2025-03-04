@@ -77,54 +77,36 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
+
+
+
     /**
      * Runs the first launch configuration found in launch.json
      */
     private async runFirstLaunchConfiguration() {
+
+
         try {
             // Check if there's an active editor first
             if (!vscode.window.activeTextEditor) {
-                await this.openDefaultEditorFile();
-            }
-            
-            // Get all launch configurations
-			const launchConfigs = vscode.workspace.getConfiguration('launch').configurations;
-            
-            // If there are launch configurations available, use the first one
-            if (launchConfigs && launchConfigs.length > 0) {
-                // Check for ${file} variable in the configuration and validate it
-                const config = launchConfigs[0];
-                
-                // If the config uses ${file} and there's still no active editor, show a helpful message
-                if (JSON.stringify(config).includes('${file}') && !vscode.window.activeTextEditor) {
-					const firstEditor = vscode.window.visibleTextEditors[0];
-					if (firstEditor) {
-						await vscode.window.showTextDocument(firstEditor.document);
-                        await this.startDebuggingAndKeepFocus(undefined, config);
-					} else {
-						vscode.window.showErrorMessage('No editor window is open to run the program.');
-					}
-	
-                    return;
-                }
-                
-                // Start debugging with the first configuration
-                await this.startDebuggingAndKeepFocus(undefined, config);
-            } else {
-                // Fallback to the default debug start command if no configurations are found
-                // Only if there's an active editor
-                if (vscode.window.activeTextEditor) {
-                    await this.startDebuggingWithDefaultAndKeepFocus();
-                } else {
-					const firstEditor = vscode.window.visibleTextEditors[0];
-					if (firstEditor) {
-						await vscode.window.showTextDocument(firstEditor.document);
-                        await this.startDebuggingWithDefaultAndKeepFocus();
-					} else {
-						vscode.window.showErrorMessage('No editor window is open to run the program.');
-					}
-                }
-            }
+				const pythonEditor = vscode.window.visibleTextEditors.find(editor => editor.document.languageId === 'python');
+				
+				if (pythonEditor) {
+					await vscode.window.showTextDocument(pythonEditor.document);
+				} else {
+					vscode.window.showErrorMessage('No Python file is open to run the program.');
+					return;
+            	}
+			}
+
+
+			await vscode.commands.executeCommand('workbench.action.debug.start');
+			console.info('Debugging started with default command.');
+			// Restore focus to the lesson browser view after a short delay
+			setTimeout(() => {
+				this.restoreViewFocus('lessonBrowserView');
+			}, 300); // Increased timeout to give VS Code more time to switch views
+
         } catch (error) {
             // Show a more helpful error message
             console.error('Debug start error:', error);
@@ -132,35 +114,9 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    /**
-     * Starts debugging with a configuration and prevents focus switching
-     */
-    private async startDebuggingAndKeepFocus(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration): Promise<boolean> {
-        // Start the debugging
-        const result = await vscode.debug.startDebugging(folder, config);
-        
-        // If successful, restore focus to the lesson browser view after a short delay
-        if (result) {
-            setTimeout(() => {
-                this.restoreViewFocus('lessonBrowserView');
-            }, 300); // Increased timeout to give VS Code more time to switch views
-        }
-        
-        return result;
-    }
 
-    /**
-     * Uses the default debug start command and keeps focus
-     */
-    private async startDebuggingWithDefaultAndKeepFocus(): Promise<void> {
-        // Start debugging with the default command
-        await vscode.commands.executeCommand('workbench.action.debug.start');
-        
-        // Restore focus to the lesson browser view after a short delay
-        setTimeout(() => {
-            this.restoreViewFocus('lessonBrowserView');
-        }, 300); // Increased timeout to give VS Code more time to switch views
-    }
+
+
 
     /**
      * Gets the active view ID
