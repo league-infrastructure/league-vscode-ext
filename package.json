@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.5.8",
+	"version": "0.5.11",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -77,6 +77,14 @@
 			{
 				"command": "lessonBrowser.toggleCompletion",
 				"title": "Toggle Lesson Completion",
+				"icon": {
+					"light": "./media/check-on-light.svg",
+					"dark": "./media/check-on-dark.svg"
+				}
+			},
+			{
+				"command": "lessonBrowser.setCompletion",
+				"title": "Mark Lesson Completed",
 				"icon": {
 					"light": "./media/check-on-light.svg",
 					"dark": "./media/check-on-dark.svg"

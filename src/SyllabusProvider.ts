@@ -139,6 +139,12 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         });
         context.subscriptions.push(toggleCompletionCommand);
 
+        // Register the new setCompletion command
+        const setCompletionCommand = vscode.commands.registerCommand('lessonBrowser.setCompletion', (lessonItem?: LessonItem) => {
+            this.setCompletion(lessonItem);
+        });
+        context.subscriptions.push(setCompletionCommand);
+
         const clearCompletionCommand = vscode.commands.registerCommand('lessonBrowser.clearCompletion', () => {
             this.clearCompletion();
             this.openLesson(0);
@@ -284,37 +290,52 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         this.refresh();
     }
 
-    toggleCompletion(arg?: LessonItem | vscode.Uri |  null): void {
+    toggleCompletion(arg?: LessonItem | vscode.Uri | null): void {
 
         if (!arg) {
             return this.toggleCompletion(this.activeLessonItem);
         } else if ('scheme' in arg) {
             // It is a URI, from the button in the title bar of the editor menu
-            // Could lookup the path to the editor file to be sure we have the right item, but
-            // the open editor ought to be the one selected in the tree view. 
             return this.toggleCompletion(this.activeLessonItem);
         }
 
-        if (!arg || !(arg instanceof LessonItem ) ) {
+        if (!arg || !(arg instanceof LessonItem)) {
             console.log('ToggleCompletion: Argument is not a LessonItem:', arg);
             return;
         }
 
-        arg.setCompletionStatus(!arg.getCompletionStatus());
+        const newStatus = !arg.getCompletionStatus();
+        this.setCompletion(arg, !arg.getCompletionStatus());
+    }
+
+    /**
+     * Sets the completion status of a lesson to true
+     * and advances to the next incomplete lesson
+     */
+    setCompletion(arg?: LessonItem | vscode.Uri | null, status: boolean = true): void {
+        if (!arg) {
+            return this.setCompletion(this.activeLessonItem, status);
+        } else if ('scheme' in arg) {
+            // It is a URI, from the button in the title bar of the editor menu
+            return this.setCompletion(this.activeLessonItem, status);
+        }
+
+        if (!arg || !(arg instanceof LessonItem)) {
+            console.log('SetCompletion: Argument is not a LessonItem:', arg);
+            return;
+        }
+
+        // Always set to completed (true) regardless of current state
+        arg.setCompletionStatus(status);
         this.writeCompletion();
-       
         this.refresh();
 
-        if (arg.getCompletionStatus()){        // Get the next lesson and open it if it exists
-            const nextLessonItem = this.nextIncompleteLesson(arg);
-
-            if (nextLessonItem && nextLessonItem instanceof LessonItem) {
-                this.openLesson(nextLessonItem);
-              
-                
-            } else {
-                console.log(`No next lesson after ${arg.nodeId}`);
-            }
+        // Get the next lesson and open it if it exists
+        const nextLessonItem = this.nextIncompleteLesson(arg);
+        if (status && nextLessonItem && nextLessonItem instanceof LessonItem) {
+            this.openLesson(nextLessonItem);
+        } else {
+            console.log(`No next lesson after ${arg.nodeId}`);
         }
     }
 

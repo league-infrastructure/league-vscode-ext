@@ -3,9 +3,13 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Create a WebviewViewProvider class
 class LessonActionsViewProvider implements vscode.WebviewViewProvider {
+    private _view?: vscode.WebviewView;
+    
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
     resolveWebviewView(
@@ -13,6 +17,8 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
         context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken
     ) {
+        this._view = webviewView;
+        
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this._extensionUri]
@@ -23,18 +29,208 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
-                    case 'toggleCompletion':
-                        vscode.commands.executeCommand('lessonBrowser.toggleCompletion');
+                    case 'setCompletion':
+                        vscode.commands.executeCommand('lessonBrowser.setCompletion');
+                        return;
+                    case 'runPython':
+                        this.runFirstLaunchConfiguration();
+                        return;
+                    case 'stopProgram':
+                        this.stopProgramAndSwitchView();
+                        return;
+                    case 'checkPythonFile':
+                        this.checkPythonFile();
                         return;
                 }
             }
         );
+        
+        // Initial Python file check
+        this.checkPythonFile();
+        
+        // Listen for changes in editors (both active and visible)
+        vscode.Disposable.from(
+            vscode.window.onDidChangeActiveTextEditor(() => {
+                this.checkPythonFile();
+            }),
+            vscode.window.onDidChangeVisibleTextEditors(() => {
+                this.checkPythonFile();
+            })
+        );
+    }
+
+    /**
+     * Checks if there's any Python file open and updates the Webview
+     */
+    private checkPythonFile() {
+        if (!this._view) return;
+        
+        // Check all visible editors, not just the active one
+        const hasPythonFile = vscode.window.visibleTextEditors.some(
+            editor => editor.document.languageId === 'python'
+        );
+        
+        // Send message back to the Webview
+        this._view.webview.postMessage({ 
+            command: 'updatePythonFileStatus', 
+            isPythonFile: hasPythonFile
+        });
+    }
+
+    /**
+     * Runs the first launch configuration found in launch.json
+     */
+    private async runFirstLaunchConfiguration() {
+        try {
+            // Check if there's an active editor first
+            if (!vscode.window.activeTextEditor) {
+                await this.openDefaultEditorFile();
+            }
+            
+            // Get all launch configurations
+			const launchConfigs = vscode.workspace.getConfiguration('launch').configurations;
+            
+            // If there are launch configurations available, use the first one
+            if (launchConfigs && launchConfigs.length > 0) {
+                // Check for ${file} variable in the configuration and validate it
+                const config = launchConfigs[0];
+                
+                // If the config uses ${file} and there's still no active editor, show a helpful message
+                if (JSON.stringify(config).includes('${file}') && !vscode.window.activeTextEditor) {
+					const firstEditor = vscode.window.visibleTextEditors[0];
+					if (firstEditor) {
+						await vscode.window.showTextDocument(firstEditor.document);
+                        await this.startDebuggingAndKeepFocus(undefined, config);
+					} else {
+						vscode.window.showErrorMessage('No editor window is open to run the program.');
+					}
+	
+                    return;
+                }
+                
+                // Start debugging with the first configuration
+                await this.startDebuggingAndKeepFocus(undefined, config);
+            } else {
+                // Fallback to the default debug start command if no configurations are found
+                // Only if there's an active editor
+                if (vscode.window.activeTextEditor) {
+                    await this.startDebuggingWithDefaultAndKeepFocus();
+                } else {
+					const firstEditor = vscode.window.visibleTextEditors[0];
+					if (firstEditor) {
+						await vscode.window.showTextDocument(firstEditor.document);
+                        await this.startDebuggingWithDefaultAndKeepFocus();
+					} else {
+						vscode.window.showErrorMessage('No editor window is open to run the program.');
+					}
+                }
+            }
+        } catch (error) {
+            // Show a more helpful error message
+            console.error('Debug start error:', error);
+            vscode.window.showErrorMessage('Could not start debugging. Please make sure a file is open.');
+        }
+    }
+
+    /**
+     * Starts debugging with a configuration and prevents focus switching
+     */
+    private async startDebuggingAndKeepFocus(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration): Promise<boolean> {
+        // Start the debugging
+        const result = await vscode.debug.startDebugging(folder, config);
+        
+        // If successful, restore focus to the lesson browser view after a short delay
+        if (result) {
+            setTimeout(() => {
+                this.restoreViewFocus('lessonBrowserView');
+            }, 300); // Increased timeout to give VS Code more time to switch views
+        }
+        
+        return result;
+    }
+
+    /**
+     * Uses the default debug start command and keeps focus
+     */
+    private async startDebuggingWithDefaultAndKeepFocus(): Promise<void> {
+        // Start debugging with the default command
+        await vscode.commands.executeCommand('workbench.action.debug.start');
+        
+        // Restore focus to the lesson browser view after a short delay
+        setTimeout(() => {
+            this.restoreViewFocus('lessonBrowserView');
+        }, 300); // Increased timeout to give VS Code more time to switch views
+    }
+
+    /**
+     * Gets the active view ID
+     */
+    private async getActiveViewId(): Promise<string | undefined> {
+        // This method isn't needed anymore since we're just using the known view ID
+        return 'lessonBrowserView';
+    }
+
+    /**
+     * Restores focus to a specific view
+     */
+    private async restoreViewFocus(viewId: string): Promise<void> {
+        try {
+            // Focus on our lesson browser view - using the correct view ID
+            // The error shows 'lessonBrowserView' is the correct ID, not 'workbench.view.extension.lessonBrowserView'
+            await vscode.commands.executeCommand('lessonBrowserView.focus');
+        } catch (error) {
+            console.error('Error restoring view focus:', error);
+        }
+    }
+
+    /**
+     * Attempts to open a file in the workspace to satisfy the ${file} variable
+     */
+    private async openDefaultEditorFile() {
+        try {
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders || workspaceFolders.length === 0) {
+                return;
+            }
+            
+            // Look for Python files in the workspace
+            const rootPath = workspaceFolders[0].uri.fsPath;
+            
+            // Try to find a main.py or any Python file
+            const mainPaths = ['main.py', 'app.py', 'index.py'];
+            
+            for (const mainFile of mainPaths) {
+                const filePath = path.join(rootPath, mainFile);
+                if (fs.existsSync(filePath)) {
+                    const doc = await vscode.workspace.openTextDocument(filePath);
+                    await vscode.window.showTextDocument(doc);
+                    return;
+                }
+            }
+            
+            // If no specific main files found, try to find any Python file
+            const files = await vscode.workspace.findFiles('**/*.py', '**/node_modules/**', 1);
+            if (files.length > 0) {
+                const doc = await vscode.workspace.openTextDocument(files[0]);
+                await vscode.window.showTextDocument(doc);
+            }
+        } catch (error) {
+            console.error('Failed to open default file:', error);
+        }
+    }
+
+    /**
+     * Stops the running program and switches back to the lessonBrowser Lessons view
+     */
+    private async stopProgramAndSwitchView() {
+        // Stop any debugging session
+        await vscode.commands.executeCommand('workbench.action.debug.stop');
+        
+        // Switch focus to the lessonBrowserView
+        await vscode.commands.executeCommand('lessonBrowserView.focus');
     }
 
 	private getWebviewContent(): string {
-		const codeServerUrl = process.env.CODESERVER_URL || 'https://jointheleague.org';
-		const stopServerUrl = process.env.CODESERVER_STOP_URL || 'https://jointheleague.org';
-
 		return `
 			<!DOCTYPE html>
 			<html lang="en">
@@ -60,7 +256,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
 						height: 30px;
 						padding: 4px 8px;
 						margin: 0;
-						background-color: #4CAF50; /* Green color */
+						background-color: #007acc; /* Changed from green to blue */
 						color: white;
 						border: none;
 						border-radius: 4px;
@@ -68,23 +264,33 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
 						font-weight: bold;
 					}
 					#doneButton:hover {
-						background-color: #45a049; /* Darker green on hover */
+						background-color: #005fa3; /* Darker blue on hover */
 					}
 
-					#codeServerButton, #stopServerButton {
+					#runButton, #stopButton {
 						width: 48%;
 						height: 30px;
 						padding: 4px 8px;
 						margin: 0;
-						border: 2px solid blue;
-						color: blue;
-						background-color: white;
 						border-radius: 4px;
 						cursor: pointer;
 						font-weight: bold;
 					}
-					#codeServerButton:hover, #stopServerButton:hover {
-						background-color: #f0f0f0;
+					#runButton {
+						background-color: #4CAF50; /* Changed from blue to green */
+						color: white;
+						border: none;
+					}
+					#runButton:hover {
+						background-color: #45a049; /* Darker green on hover */
+					}
+					#stopButton {
+						background-color: #d9534f; /* Red color unchanged */
+						color: white;
+						border: none;
+					}
+					#stopButton:hover {
+						background-color: #c9302c; /* Darker red on hover */
 					}
 					#buttonContainer {
 						display: flex;
@@ -94,28 +300,53 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
 					.icon-space {
 						margin-right: 5px;
 					}
-					.fa-ban {
-						color: red;
+					.fa-play {
+						color: white;
 					}
-					.fa-external-link-alt {
-						color: blue;
+					.fa-stop {
+						color: white;
 					}
 				</style>
 			</head>
 			<body>
 				<button id="doneButton">Next Lesson</button>
-				<div id="buttonContainer">
-					<button id="codeServerButton" onclick="window.location.href='${codeServerUrl}'">
-						<i class="fas fa-external-link-alt icon-space"></i>Code Server App
+				<div id="buttonContainer" style="display: none;">
+					<button id="runButton">
+						<i class="fas fa-play icon-space"></i>Run
 					</button>
-					<button id="stopServerButton" onclick="window.location.href='${stopServerUrl}'">
-						<i class="fas fa-ban icon-space"></i>Stop Server
+					<button id="stopButton">
+						<i class="fas fa-stop icon-space"></i>Stop
 					</button>
 				</div>
 				<script>
 					const vscode = acquireVsCodeApi();
+					
 					document.getElementById('doneButton').addEventListener('click', () => {
-						vscode.postMessage({ command: 'toggleCompletion' });
+						vscode.postMessage({ command: 'setCompletion' });
+					});
+					
+					document.getElementById('runButton').addEventListener('click', () => {
+						vscode.postMessage({ command: 'runPython' });
+					});
+					
+					document.getElementById('stopButton').addEventListener('click', () => {
+						vscode.postMessage({ command: 'stopProgram' });
+					});
+
+					 // Request an initial check for Python files
+					vscode.postMessage({ command: 'checkPythonFile' });
+
+					// Handle messages sent from the extension to the webview
+					window.addEventListener('message', event => {
+						const message = event.data;
+						
+						switch (message.command) {
+							case 'updatePythonFileStatus':
+								// Show or hide the run buttons based on whether there's a Python file open
+								document.getElementById('buttonContainer').style.display = 
+									message.isPythonFile ? 'flex' : 'none';
+								break;
+						}
 					});
 				</script>
 			</body>

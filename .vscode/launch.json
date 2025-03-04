@@ -6,6 +6,13 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+		{
 			// Use while true; do nc -l 8095; done for testing
 			"name": "Run Extension (test-server.py)",
 			"type": "extensionHost",
