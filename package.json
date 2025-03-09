@@ -2,7 +2,7 @@
 	"name": "jtl-vscode",
 	"description": "League Extensions",
 	"icon": "media/flag.png",
-	"version": "0.5.12",
+	"version": "1.20250309.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",

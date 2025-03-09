@@ -5,6 +5,6 @@
         "debug": "hide",
         "extensions": "hide"
     },
-    "jtl.syllabus.path": "",
+    "jtl.syllabus.path": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/.jtl/syllabus-1h.yaml",
     "jtl.syllabus.preferEnv": false
 }

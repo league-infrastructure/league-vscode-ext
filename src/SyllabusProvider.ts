@@ -9,10 +9,50 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
+import * as yaml from 'js-yaml';
 import { URL } from 'url';
 
 import { SylFs } from './models';
 import { Syllabus, Lesson, Module } from './models';
+
+function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
+
+    let syllabusPath = syllabus.filePath;
+
+    if (!syllabusPath) {
+        throw new Error('Syllabus file path not set');
+    }
+
+    let coursePath = path.dirname(syllabus?.filePath || '');
+
+    if (syllabus.module_dir) {
+        coursePath = path.resolve(coursePath, syllabus.module_dir);
+    }
+
+    if (!fs.existsSync(coursePath)) {
+        throw vscode.FileSystemError.FileNotFound(`Course directory not found at path: ${coursePath}`);
+    }
+
+    const storageDir = path.join(coursePath, 'store');
+
+    if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
+    }
+
+    const completionFilePath = syllabusPath.replace(/\.yaml$/, '-completion.json');
+
+    // Create the completion status file if it doesn't exist, for storing and persisting completion status
+    if (!fs.existsSync(completionFilePath)) {
+        fs.writeFileSync(completionFilePath, JSON.stringify({}));
+    }
+
+    return {
+        syllabusPath: syllabus.filePath || '',
+        coursePath,
+        storageDir,
+        completionFilePath
+    };
+}
 
 export async function resolvePath(filePath: string, storageDir: string): Promise<string> {
     if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
@@ -71,15 +111,15 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     private nextNodeId: number = 0;
     private activeLessonItem: LessonItem | null = null;
 
-    constructor(context: vscode.ExtensionContext, syllabus: Syllabus, private sylFs: SylFs) {
+    // sylFS gets setup in updateSyllabus
+    public sylFs: SylFs = { syllabusPath: '', coursePath: '', storageDir: '', completionFilePath: '' };
+      
+
+    constructor(context: vscode.ExtensionContext) {
         
         this.register(context);
 
-        this.root = this.updateSyllabus(syllabus)
-
-        //this.walk(this.root, (item: SyllabusItem) => {
-        //    console.log(`WALK Name: ${item.label}, SPath: ${item.getSPath()}`);
-        //});
+        this.root = this.updateSyllabus(context);
 
         this.openLesson(null);
 
@@ -152,12 +192,72 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         context.subscriptions.push(clearCompletionCommand);
     }
 
-    updateSyllabus(syllabus: Syllabus) : RootItem {
+
+    public loadSyllabus(context: vscode.ExtensionContext): Syllabus | false {
+    
+        //
+        // Load the Syllabus file from either the env var or the config
+    
+        const jtlSyllabusConfig = vscode.workspace.getConfiguration('jtl').get<string>('syllabus.path');
+        const jtlSyllabusEnv = process.env.JTL_SYLLABUS;
+    
+        // determine which value to prefer
+        let jtlSyllabus;
+    
+        const pref = vscode.workspace.getConfiguration('jtl').get<boolean>('syllabus.preferEnv');
+        if (pref) {
+            jtlSyllabus = jtlSyllabusEnv || jtlSyllabusConfig;
+        } else {
+            jtlSyllabus = jtlSyllabusConfig || jtlSyllabusEnv;
+        }
+    
+        if (!jtlSyllabus) {
+            //throw new NoSyllabusError('JTL_SYLLABUS environment variable or configuration is not set.');
+            return false
+        }
+    
+        const syllabusPath = path.isAbsolute(jtlSyllabus) ? jtlSyllabus : path.join(context.extensionPath, jtlSyllabus);
+        if (!fs.existsSync(syllabusPath)) {
+            throw vscode.FileSystemError.FileNotFound(`Course file not found at path: ${syllabusPath}`);
+        }
+    
+        //
+        // Load the Syllabus Data
+        // 
+    
+        console.log('Loading syllabus from:', syllabusPath);
+    
+        let syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as Syllabus;
+   
+        // Check if the syllabus is in the correct format
+        if (!syllabus.modules || !Array.isArray(syllabus.modules) || syllabus.modules.length === 0 || !syllabus.modules[0].lessons || !syllabus.modules[0].lessons[0].name) {
+            throw Error(`Invalid syllabus format in file ${syllabusPath}`);
+        }
+    
+    
+        syllabus.filePath = syllabusPath;
+    
+        return syllabus;
+    
+    }
+    
+    
+
+    public updateSyllabus(context: vscode.ExtensionContext) : RootItem {
+
+        const syllabus: Syllabus | false = this.loadSyllabus(context);
+
+        if (!syllabus) {
+            throw Error('No syllabus loaded');
+        }
+
+        this.sylFs = setupFs(syllabus, context);
 
         this.root = new RootItem(this, syllabus);
 
         this.readCompletion();
         this._onDidChangeTreeData.fire();
+        console.log('Syllabus updated');
         return this.root
     }
 

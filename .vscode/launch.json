@@ -34,7 +34,7 @@
 				"KST_REPORT_RATE": "10",
 				"KST_DEBUG": "false",
 				"KST_ROOT_DIR": "${workspaceRoot}/test",
-				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/.jtl/syllabus.yaml"
+				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/.jtl/syllabus.yaml"
             }
 		},
 		{
