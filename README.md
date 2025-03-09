@@ -28,6 +28,16 @@ and are typically run on a [specific Docker
 image](https://github.com/league-infrastructure/docker-codeserver-python) that
 provides a NoVNC based virtual screen. 
 
+## Configuration
+
+If you are developing a lesson syllabus, set the `jtl.syllabus.dev` setting to
+True, or set the `JTL_SYLLABUS_DEV` environment variable to True. This will
+enable the development mode, which will prevent the extension from
+re-configuring the UI and automatically opening the first lesson. 
+
+The Syllabus file can be set with the `jtl.syllabus.path` setting, or the
+`JTL_SYLLABUS` environment variable.
+
 
 ## License
 

@@ -121,7 +121,10 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
         this.root = this.updateSyllabus(context);
 
-        this.openLesson(null);
+
+        if (!context.globalState.get('jtl.syllabus.isDevMode', false)) {
+            this.openLesson(null);
+        }
 
     }
 
