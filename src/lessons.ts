@@ -24,7 +24,7 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
 
     const watcher = fs.watch(sylFs.syllabusPath, (eventType) => {
         if (eventType === 'change') {
-          
+
             lessonProvider.updateSyllabus(context);
             console.log('Syllabus file changed');
             setupFileWatcher(lessonProvider.sylFs, lessonProvider, context);
@@ -39,7 +39,7 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
             lessonProvider.updateSyllabus(context);
             setupFileWatcher(lessonProvider.sylFs, lessonProvider, context);
         }
-        
+
     });
 }
 
@@ -57,32 +57,32 @@ function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider | null
 }
 
 export async function activateLessonBrowser(context: vscode.ExtensionContext) {
-
-
     let lessonProvider = createTreeDP(context);
 
     if (!lessonProvider) {
         return;
     }
 
+    const config = vscode.workspace.getConfiguration('jtl.syllabus');
+    const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
 
-    /**
-     * Reconfigure the views and settings to make the lesson browser simpler for students. 
-     */
+    if (!isDevMode) {
+        /**
+         * Reconfigure the views and settings to make the lesson browser simpler for students. 
+         */
+        await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
+        await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
+        await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
 
-    await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
-    await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
-    await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
-
-
-    // Unhide the activity bar when the extension is deactivated
-    context.subscriptions.push({
-        dispose: () => {
-            vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
-            vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
-            vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
-        }
-    });
+        // Unhide the activity bar when the extension is deactivated
+        context.subscriptions.push({
+            dispose: () => {
+                vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
+                vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
+                vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
+            }
+        });
+    }
 
     console.log('Lesson browser activated');
 }

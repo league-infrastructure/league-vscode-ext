@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "media/flag.png",
-	"version": "1.20250309.2",
+	"version": "1.20250309.3",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -152,12 +152,17 @@
 				"jtl.syllabus.path": {
 					"type": "string",
 					"default": null,
-					"description": "Path to the JTL syllabus file."
+					"description": "Path to the JTL syllabus file. Synonym is env var JTL_SYLLABUS"
 				},
 				"jtl.syllabus.preferEnv": {
 					"type": "boolean",
 					"default": false,
 					"description": "Determines if the environment variable overrides the config setting."
+				},
+				"jtl.syllabus.dev": {
+					"type": "boolean",
+					"default": false,
+					"description": "If true, skips UI reconfiguration for development purposes. Synonym is env var JTL_SYLLABUS_DEV"
 				}
 			}
 		}

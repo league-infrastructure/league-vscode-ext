@@ -1,3 +1,4 @@
+/* Keystroke telemetry for tracking student activity*/
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
