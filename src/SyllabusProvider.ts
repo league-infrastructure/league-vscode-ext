@@ -14,6 +14,7 @@ import { URL } from 'url';
 
 import { SylFs } from './models';
 import { Syllabus, Lesson, Module } from './models';
+import { LessonDisplay } from './LessonDisplay';
 
 function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
 
@@ -456,84 +457,20 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             return;
         }
 
-
         let lesson = lessonItem.lesson;
         this._viewer?.reveal(lessonItem, { select: true, focus: true });
 
-        console.log('Active Editor!: ', vscode.window.activeTextEditor);
 
-        await vscode.workspace.saveAll(false);
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        let ld: LessonDisplay = new LessonDisplay(this, lesson);
 
-        let lessonEditor = null
+        await ld.closeAllTabs();
+        ld.openTabs();
 
-
-        // Open lesson 
-        if (lesson.lesson) {
-            if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
-
-                await vscode.commands.executeCommand('simpleBrowser.show', lesson.lesson);
-            } else {
-                const lessonPath = path.join(this.sylFs.coursePath, lesson.lesson);
-                if (fs.existsSync(lessonPath)) {
-
-                    const doc = await vscode.workspace.openTextDocument(lessonPath);
-
-                    if (path.extname(lessonPath) === '.md') {
-                        await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
-                    } else {                        
-                        await vscode.window.showTextDocument(doc, { preview: false });
-                    }
-                
-
-                }
-            }
-        }
-
-        let exerciseEditor = null;
-
-        // Then open exercise 
-        if (lesson.exercise) {
-            let exercisePath = path.join(this.sylFs.coursePath, lesson.exercise);
-
-            exercisePath = await resolvePath(exercisePath, this.sylFs.storageDir);
-
-            if (fs.existsSync(exercisePath)) {
-                if (path.extname(exercisePath) === '.ipynb') {
-                    await vscode.commands.executeCommand('vscode.openWith',
-                        vscode.Uri.file(exercisePath), 'jupyter-notebook');
-                    await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
-                } else {
-                    const doc = await vscode.workspace.openTextDocument(exercisePath);
-                    await vscode.window.showTextDocument(doc, { preview: false });
-                    await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
-                }
-            }
-        }
-
-
-
-        if (lesson.display) {
-            await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
-        } else {
-            await vscode.commands.executeCommand('jointheleague.closeVirtualDisplay');
-        }
-
-        if (lesson.terminal) {
-            const terminal = vscode.window.createTerminal('Lesson Terminal');
-            terminal.show();
-        } else {
-            vscode.window.terminals.forEach(terminal => terminal.dispose());
-        }
 
         this.activeLessonItem = lessonItem;
 
     }
-
-    
-
 }
-
 
 export abstract class SyllabusItem extends vscode.TreeItem {
 

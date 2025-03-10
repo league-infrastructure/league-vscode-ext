@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-let virtualDisplayTab: vscode.Tab | undefined;
+export let virtualDisplayTab: vscode.Tab | undefined;
 
 export function activateVirtDisplay(context: vscode.ExtensionContext) {
 
@@ -15,9 +15,13 @@ export function activateVirtDisplay(context: vscode.ExtensionContext) {
 
             try {
                 await vscode.commands.executeCommand('simpleBrowser.api.open', vncUrl, { 
-                    viewColumn: vscode.ViewColumn.Beside, label: 'Virtual Display' });
-                await vscode.commands.executeCommand('workbench.action.moveEditorToRightGroup');
-
+                     label: 'Virtual Display' 
+                });
+                
+                //await vscode.commands.executeCommand('simpleBrowser.api.open', vncUrl, { 
+                //    viewColumn: vscode.ViewColumn.Beside, label: 'Virtual Display' 
+                //});
+              
                 // Save reference to the opened tab
                 const tabGroups = vscode.window.tabGroups.all;
                 for (const tabGroup of tabGroups) {
@@ -33,6 +37,15 @@ export function activateVirtDisplay(context: vscode.ExtensionContext) {
             }
         })
     );
+
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jointheleague.openVirtualDisplayRight', async () => {
+            await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
+            await vscode.commands.executeCommand('workbench.action.moveEditorToRightGroup');
+        })
+    );
+
 
     context.subscriptions.push(
         vscode.commands.registerCommand('jointheleague.closeVirtualDisplay', async () => {

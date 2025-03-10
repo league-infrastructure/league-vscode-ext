@@ -34,7 +34,7 @@
 				"KST_REPORT_RATE": "10",
 				"KST_DEBUG": "false",
 				"KST_ROOT_DIR": "${workspaceRoot}/test",
-				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/.jtl/syllabus.yaml",
+				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/.jtl/syllabus-test.yaml",
 				"JTL_SYLLABUS_DEV": "1" // Prevent moving activity bar and other UI simplifications
             }
 		},

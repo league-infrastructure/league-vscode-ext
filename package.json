@@ -57,6 +57,15 @@
 				}
 			},
 			{
+				"command": "jointheleague.openVirtualDisplayRight",
+				"title": "Open Virtual Display on Right",
+				"category": "League",
+				"icon": {
+					"light": "./media/monitor-icon-light.svg",
+					"dark": "./media/monitor-icon-dark.svg"
+				}
+			},
+			{
 				"command": "jointheleague.closeVirtualDisplay",
 				"title": "Close Virtual Display",
 				"category": "League"
@@ -110,7 +119,7 @@
 		"menus": {
 			"editor/context": [
 				{
-					"command": "jointheleague.openVirtualDisplay",
+					"command": "jointheleague.openVirtualDisplayRight",
 					"when": "editorLangId == 'python' || editorLangId == 'java' "
 				},
 				{
@@ -120,7 +129,7 @@
 			],
 			"editor/title": [
 				{
-					"command": "jointheleague.openVirtualDisplay",
+					"command": "jointheleague.openVirtualDisplayRight",
 					"group": "navigation"
 				},
 				{
