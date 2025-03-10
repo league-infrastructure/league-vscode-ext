@@ -460,10 +460,15 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         let lesson = lessonItem.lesson;
         this._viewer?.reveal(lessonItem, { select: true, focus: true });
 
+        console.log('Active Editor!: ', vscode.window.activeTextEditor);
+
         await vscode.workspace.saveAll(false);
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 
-        // Open lesson first if it exists
+        let lessonEditor = null
+
+
+        // Open lesson 
         if (lesson.lesson) {
             if (lesson.lesson.startsWith('http://') || lesson.lesson.startsWith('https://')) {
 
@@ -472,18 +477,22 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
                 const lessonPath = path.join(this.sylFs.coursePath, lesson.lesson);
                 if (fs.existsSync(lessonPath)) {
 
+                    const doc = await vscode.workspace.openTextDocument(lessonPath);
+
                     if (path.extname(lessonPath) === '.md') {
-                        const doc = await vscode.workspace.openTextDocument(lessonPath);
                         await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
-                    } else {
-                        const doc = await vscode.workspace.openTextDocument(lessonPath);
+                    } else {                        
                         await vscode.window.showTextDocument(doc, { preview: false });
                     }
+                
+
                 }
             }
         }
 
-        // Then open exercise after lesson is fully loaded
+        let exerciseEditor = null;
+
+        // Then open exercise 
         if (lesson.exercise) {
             let exercisePath = path.join(this.sylFs.coursePath, lesson.exercise);
 
@@ -502,6 +511,8 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             }
         }
 
+
+
         if (lesson.display) {
             await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
         } else {
@@ -509,19 +520,21 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
 
         if (lesson.terminal) {
-
             const terminal = vscode.window.createTerminal('Lesson Terminal');
             terminal.show();
         } else {
-
             vscode.window.terminals.forEach(terminal => terminal.dispose());
         }
 
         this.activeLessonItem = lessonItem;
 
-
     }
+
+    
+
 }
+
+
 export abstract class SyllabusItem extends vscode.TreeItem {
 
     //iconPath = {

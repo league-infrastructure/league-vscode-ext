@@ -10,7 +10,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "internalConsole"  // This prevents the terminal from opening
         },
 		{
 			// Use while true; do nc -l 8095; done for testing

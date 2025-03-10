@@ -104,6 +104,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
 			console.info('Debugging started with default command.');
 			// Restore focus to the lesson browser view after a short delay
 			setTimeout(() => {
+                vscode.commands.executeCommand('workbench.action.closePanel');
 				this.restoreViewFocus('lessonBrowserView');
 			}, 300); // Increased timeout to give VS Code more time to switch views
 
