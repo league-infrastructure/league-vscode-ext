@@ -67,7 +67,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
         
         // Check all visible editors, not just the active one
         const hasPythonFile = vscode.window.visibleTextEditors.some(
-            editor => editor.document.languageId === 'python'
+            editor => editor.document.fileName.endsWith('.py')
         );
         
         // Send message back to the Webview

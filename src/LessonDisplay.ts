@@ -224,7 +224,7 @@ export class LessonDisplay {
 
 		await this.waitforTabs();
 
-		this.logTabs();
+		//this.logTabs();
 
 	}
 
