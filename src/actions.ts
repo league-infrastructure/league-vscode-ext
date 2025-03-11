@@ -33,7 +33,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
                         vscode.commands.executeCommand('lessonBrowser.setCompletion');
                         return;
                     case 'runPython':
-                        this.runFirstLaunchConfiguration();
+                        this.runDebug();
                         return;
                     case 'stopProgram':
                         this.stopProgramAndSwitchView();
@@ -83,31 +83,36 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
     /**
      * Runs the first launch configuration found in launch.json
      */
-    private async runFirstLaunchConfiguration() {
+    private async runDebug() {
 
-
+        console.log('Running first launch configuration');
         try {
             // Check if there's an active editor first
-            if (!vscode.window.activeTextEditor) {
-				const pythonEditor = vscode.window.visibleTextEditors.find(editor => editor.document.languageId === 'python');
-				
-				if (pythonEditor) {
-					await vscode.window.showTextDocument(pythonEditor.document);
-				} else {
-					vscode.window.showErrorMessage('No Python file is open to run the program.');
-					return;
-            	}
-			}
 
+            const pythonEditor = vscode.window.visibleTextEditors.find(editor => editor.document.languageId === 'python');
+            
+            if (!pythonEditor) {
+                vscode.window.showErrorMessage('No Python file is open to run the program.');
+                return;
+            }
 
-			await vscode.commands.executeCommand('workbench.action.debug.start');
-			console.info('Debugging started with default command.');
-			// Restore focus to the lesson browser view after a short delay
-			setTimeout(() => {
+            const workspaceFolder = vscode.workspace.getWorkspaceFolder(pythonEditor.document.uri);
+    
+
+            vscode.debug.startDebugging(workspaceFolder, {
+                name: "Launch Python File",
+                type: "python",
+                request: "launch",
+                program: pythonEditor.document.uri.fsPath,
+                console: "internalConsole"
+            }).then(() => {
                 vscode.commands.executeCommand('workbench.action.closePanel');
 				this.restoreViewFocus('lessonBrowserView');
-			}, 300); // Increased timeout to give VS Code more time to switch views
+                console.info('Debugging started with default command.');
+            })
 
+
+	
         } catch (error) {
             // Show a more helpful error message
             console.error('Debug start error:', error);

@@ -148,7 +148,9 @@ export class LessonDisplay {
 	public async closeAllTabs(): Promise<void> {
 
 		await vscode.workspace.saveAll(false);
-		await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+		await vscode.commands.executeCommand('workbench.action.closeAllEditors'); // Maybe redundant?
+
+		await vscode.commands.executeCommand('workbench.action.debug.stop');
 
 		if (this.lessonTab) {
 			vscode.window.tabGroups.close(this.lessonTab);

@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "media/flag.png",
-	"version": "1.20250310.1",
+	"version": "1.20250310.4",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
