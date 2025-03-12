@@ -115,10 +115,10 @@ export class LessonDisplay {
 
 	async openDisplayTab(): Promise<void> {
 		if (this.lesson.display) {
-			const vncUrl = process.env.VNC_URL;
+			const vncUrl = process.env.JTL_VNC_URL;
 
 			if (!vncUrl) {
-				vscode.window.showErrorMessage('VNC_URL environment variable is not set');
+				vscode.window.showErrorMessage('JTL_VNC_URL environment variable is not set');
 				return;
 			}
 

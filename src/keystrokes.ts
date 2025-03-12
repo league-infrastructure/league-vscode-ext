@@ -4,6 +4,7 @@ import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
 import * as crypto from 'crypto';
+import { SyllabusProvider } from './SyllabusProvider';
 
 function generateId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -14,18 +15,27 @@ function generateId(): string {
     return result;
 }
 
+interface FileKeystrokeStats {
+    keystrokes: number;
+    lastModified: string;
+}
+
 interface KeystrokeData {
     timestamp: string;
-    containerID: string;
-    serviceID: string;
-    serviceName: string;
+    username: string;
+    class_id: string; // The class ID
+    image: string; // The image name
+    repo: string; // The repository name
+    syllabus: string; // The syllabus name
     keystrokes: number; // Latest report of number of keystrokes in the last interval
-	average30m: number; // Average keystrokes per second over the last 30 minutes
+    average30m: number; // Average keystrokes per second over the last 30 minutes
+    average5m: number; // Average keystrokes per second over the last 5 minutes
+    memory: number; // Memory usage in MB
     reportingRate: number; // How often to report, reports per second. 
     instanceId: string; // Unique identifier for the instance
     fileStats: Record<string, FileKeystrokeStats>; // Keystroke statistics per file
+    completions: number[]; // Lesson Completions
 }
-
 
 function hashKeystrokeData(data: KeystrokeData): string {
     const hash = crypto.createHash('sha256');
@@ -40,41 +50,30 @@ function hashKeystrokeData(data: KeystrokeData): string {
     return hash.digest('hex');
 }
 
-
-
-interface FileKeystrokeStats {
-    keystrokes: number;
-    lastModified: string;
-}
-
 export class KeystrokeMonitor {
     private readonly instanceId: string;
     private totalKeystrokes: number = 0;
     private fileKeystrokes: Map<string, FileKeystrokeStats> = new Map();
     private interval: NodeJS.Timeout | undefined;
     private average30m: number = 0;
+    private average5m: number = 0;
     private nReports: number = 0;
     private readonly reportDir: string;
     private readonly reportingUrl: string;
-    private readonly containerID: string;
-    private readonly serviceID: string;
-    private readonly serviceName: string;
-    private readonly reportRate: number;
+    private readonly reportInterval: number;
     private readonly debug: boolean;
     private keystrokeSubscription: vscode.Disposable | undefined;
     private lastReport: KeystrokeData | undefined;
- 
-    constructor(context: vscode.ExtensionContext) {
-        
+
+    constructor(context: vscode.ExtensionContext, private syllabusProvider: SyllabusProvider) {
+
         this.instanceId = generateId();
         this.reportDir = process.env.KST_REPORT_DIR || vscode.extensions.getExtension(context.extension.id)?.extensionPath || '';
         this.reportingUrl = process.env.KST_REPORTING_URL || '';
-        this.containerID = process.env.KST_CONTAINER_ID || 'unknown';
-        this.serviceID = process.env.KST_SERVICE_ID || 'unknown';
-        this.serviceName = process.env.KST_SERVICE_NAME || 'unknown';
-        this.reportRate = parseInt(process.env.KST_REPORT_RATE || '30', 10);
+
+        this.reportInterval = parseInt(process.env.KST_REPORT_INTERVAL || '30', 10); // Seconds between reports
         this.debug = process.env.KST_DEBUG === 'true' || false;
-    
+
         if (this.reportingUrl) {
             console.log(`Keystrokes will be reported to: ${this.reportingUrl}`);
         } else {
@@ -87,41 +86,41 @@ export class KeystrokeMonitor {
             console.log('Keystroke reports will not be written to disk no report dir');
         }
 
-        console.log('Keystroke monitor initialized with params: ', 
-            { reportingUrl: this.reportingUrl, containerID: this.containerID, reportRate: this.reportRate, instanceId: this.instanceId });
+        console.log('Keystroke monitor initialized with params: ',
+            { reportingUrl: this.reportingUrl, reportRate: this.reportInterval, instanceId: this.instanceId });
     }
 
     public start() {
         this.keystrokeSubscription = vscode.workspace.onDidChangeTextDocument(
             this.handleKeystroke.bind(this)
         );
-        
+
         this.interval = setInterval(() => {
             void this.reportMetrics();
-        }, 1000 * this.reportRate);
-        
+        }, 1000 * this.reportInterval);
+
         if (this.debug) {
-            console.log(`Reporting interval set to ${this.reportRate} seconds`);
+            console.log(`Reporting interval set to ${this.reportInterval} seconds`);
         }
     }
 
     private handleKeystroke(event: vscode.TextDocumentChangeEvent) {
         // Get the file path
         const filePath = event.document.uri.fsPath;
-        
+
         // Update total keystrokes
         this.totalKeystrokes++;
-        
+
         // Update file-specific keystrokes
         const currentStats = this.fileKeystrokes.get(filePath) || {
             keystrokes: 0,
             lastModified: new Date().toISOString()
         };
-        
+
         // Increment keystroke count for this file
         currentStats.keystrokes++;
         currentStats.lastModified = new Date().toISOString();
-        
+
         // Update the map
         this.fileKeystrokes.set(filePath, currentStats);
 
@@ -130,12 +129,29 @@ export class KeystrokeMonitor {
         }
     }
 
+    private async getMemoryUsage(): Promise<number> {
+        const memoryUsageFilePath = '/sys/fs/cgroup/memory.current';
+
+        const memoryUsageContent = await vscode.workspace.fs.readFile(vscode.Uri.file(memoryUsageFilePath));
+        const memoryUsage = parseInt(memoryUsageContent.toString(), 10); // Convert from bytes to MB
+        return memoryUsage;;
+    }
+
+    private calcRunningAverage(newData: number, currentAverage: number, averagePeriod: number): number {
+
+        const reportingIntervalsIn30Minutes = averagePeriod * (60 / this.reportInterval);
+        const queueSize = Math.min(++this.nReports, reportingIntervalsIn30Minutes);
+
+        return ((currentAverage * (queueSize - 1)) + newData) / queueSize;
+    }
+
+
     private makeKeyStrokeData(): KeystrokeData {
 
-        const reportingIntervalsIn30Minutes = (30 * 60) / this.reportRate;
-        const queueSize = Math.min(++this.nReports, reportingIntervalsIn30Minutes);
-        const currentKPS = this.totalKeystrokes / this.reportRate;
-        this.average30m = ((this.average30m * (queueSize - 1)) + currentKPS) / queueSize;
+        const currentKPS = this.totalKeystrokes / this.reportInterval;
+        
+        this.average30m = this.calcRunningAverage(currentKPS, this.average30m, 30);
+        this.average5m = this.calcRunningAverage(currentKPS, this.average5m, 5);
 
         // Convert Map to plain object for JSON serialization
         const fileStats: Record<string, FileKeystrokeStats> = {};
@@ -143,16 +159,23 @@ export class KeystrokeMonitor {
             fileStats[path] = stats;
         });
 
+        const memoryUsage = this.getMemoryUsage();
+
         const data: KeystrokeData = {
             timestamp: new Date().toISOString(),
-            containerID: this.containerID,
-            serviceID: this.containerID,
-            serviceName: this.serviceName,
             instanceId: this.instanceId,
             keystrokes: this.totalKeystrokes,
             average30m: this.average30m,
-            reportingRate: this.reportRate,
-            fileStats: fileStats
+            average5m: this.average5m,
+            memory: process.memoryUsage().rss / 1024 / 1024,
+            reportingRate: this.reportInterval,
+            fileStats: fileStats,
+            completions: this.syllabusProvider.getCompletions(),   
+            image: process.env.JTL_IMAGE_URI || 'unknown',       
+            repo:  process.env.JTL_REPO   || 'unknown',
+            syllabus: process.env.JTL_SYLLABUS || 'unknown',
+            class_id: process.env.JTL_CLASS_ID || 'unknown',
+            username: process.env.JTL_USERNAME || 'unknown'
         };
 
         return data
@@ -168,7 +191,7 @@ export class KeystrokeMonitor {
         this.writeToReportDir(data);
         this.totalKeystrokes = 0;
         this.lastReport = data;
-        
+
     }
 
     public stop() {
@@ -176,7 +199,7 @@ export class KeystrokeMonitor {
             clearInterval(this.interval);
             this.interval = undefined;
         }
-        
+
         if (this.keystrokeSubscription) {
             this.keystrokeSubscription.dispose();
             this.keystrokeSubscription = undefined;
@@ -195,7 +218,7 @@ export class KeystrokeMonitor {
             return
         }
 
-        
+
         return new Promise((resolve, reject) => {
             const url = new URL(this.reportingUrl);
             const options = {
@@ -249,7 +272,7 @@ export class KeystrokeMonitor {
                     }
                 }
             }
-        } 
+        }
     }
 
     private async writeToReportDir(data: KeystrokeData): Promise<void> {
@@ -263,18 +286,18 @@ export class KeystrokeMonitor {
         const fileBase = `${this.reportDir}/keystrokes/${this.instanceId}`;
 
         let filePath = '';
-        let lastPath =  fileBase + '/last.json'
+        let lastPath = fileBase + '/last.json'
 
         // If the data is the same as the last report, write to the last.json file, so 
         // we still get a record of the last report even if it's the same as the current one, 
         // but we don't clog up the directory. 
         if (this.lastReport && hashKeystrokeData(data) === hashKeystrokeData(this.lastReport)) {
             filePath = lastPath;
-        }  else {
+        } else {
             filePath = fileBase + `/${ts}.json`;
 
             // Delete the last.json file if it exists
-            try { 
+            try {
                 const lastUri = vscode.Uri.file(lastPath);
                 const lastFileExists = await vscode.workspace.fs.stat(lastUri).then(() => true, () => false);
                 if (lastFileExists) {
@@ -292,22 +315,20 @@ export class KeystrokeMonitor {
     }
 }
 
-export function activateKeyRate(context: vscode.ExtensionContext) {
+export function activateKeyRate(context: vscode.ExtensionContext, syllabusProvider: SyllabusProvider) {
     try {
 
+        const monitor = new KeystrokeMonitor(context, syllabusProvider);
 
-
-        const monitor = new KeystrokeMonitor(context);
-        
         // Start monitoring
         monitor.start();
-        
+
         // Register the monitor for disposal
         context.subscriptions.push(monitor);
-        
+
         // Log activation
         console.log('Key rate monitor activated');
-        
+
     } catch (error) {
         if (error instanceof Error) {
             vscode.window.showErrorMessage(`Failed to initialize keystroke monitor: ${error.message}`);
@@ -315,4 +336,4 @@ export function activateKeyRate(context: vscode.ExtensionContext) {
     }
 }
 
-export function deactivate() {}
+export function deactivate() { }

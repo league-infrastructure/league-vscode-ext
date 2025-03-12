@@ -1,0 +1,32 @@
+name: Python Apprentice
+description: Introduction to programming
+module_dir: .
+modules:
+- name: 00_Turtles
+  overview: README.md
+  lessons:
+  - name: Welcome
+    exercise: 01a_Welcome.ipynb
+    display: false
+  - name: LEDt
+    exercise: 02a_Meet_Tina.py
+    lesson: .lessons/02a_Meet_Tina.md
+    display: true
+  - name: lEDt Py
+    exercise: 02a_Meet_Tina.py
+    display: true
+  - name: lEDt Notebook
+    exercise: 02b_What_Can_Tina_Do.ipynb
+    display: false
+  - name: Ledt Notebook
+    lesson: 02b_What_Can_Tina_Do.ipynb
+  - name: Ledt Md
+    lesson: README.md
+    
+  - name: lEdT
+    exercise: 02a_Meet_Tina.py
+    terminal: true  
+  
+  - name: Running Programs
+    exercise: 01c_Run_Programs.ipynb
+    display: false

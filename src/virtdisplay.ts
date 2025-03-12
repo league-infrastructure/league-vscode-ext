@@ -6,10 +6,10 @@ export function activateVirtDisplay(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('jointheleague.openVirtualDisplay', async () => {
-            const vncUrl = process.env.VNC_URL;
+            const vncUrl = process.env.JTL_VNC_URL;
 
             if (!vncUrl) {
-                vscode.window.showErrorMessage('VNC_URL environment variable is not set');
+                vscode.window.showErrorMessage('JTL_VNC_URL environment variable is not set');
                 return;
             }
 

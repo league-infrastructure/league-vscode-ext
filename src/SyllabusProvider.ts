@@ -344,21 +344,30 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
     }
 
-    writeCompletion(): void {
+    public getCompletions(): number[] {
         const completedLessons: number[] = [];
         this.itemMap.forEach((item, id) => {
             if (item instanceof LessonItem && item.getCompletionStatus()) {
                 completedLessons.push(id);
             }
         });
+        
+        return completedLessons.sort((a, b) => a - b);
+    }
+
+    
+
+    writeCompletion(): void {
+        const completedLessons: number[] = this.getCompletions();
 
         try {
-            completedLessons.sort((a, b) => a - b);
 
             fs.writeFileSync(this.sylFs.completionFilePath, JSON.stringify(completedLessons));
         } catch (error) {
             console.error('Error writing completion file:', error);
         }
+
+
     }
 
     nextIncompleteLesson(lesson: LessonItem | number | null): LessonItem | null {
@@ -417,8 +426,12 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
      * and advances to the next incomplete lesson
      */
     setCompletion(arg?: LessonItem | vscode.Uri | null, status: boolean = true): void {
-        if (!arg) {
+
+        if (!arg && this.activeLessonItem) {
             return this.setCompletion(this.activeLessonItem, status);
+        } else if (!arg) {
+            console.log('SetCompletion: arg is null and no active lesson');
+            return;
         } else if ('scheme' in arg) {
             // It is a URI, from the button in the title bar of the editor menu
             return this.setCompletion(this.activeLessonItem, status);
@@ -442,6 +455,8 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             console.log(`No next lesson after ${arg.nodeId}`);
         }
     }
+
+
 
     async openLesson(lessonItem: LessonItem | number | null) {
 

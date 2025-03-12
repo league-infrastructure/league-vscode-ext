@@ -26,15 +26,17 @@
 			"outFiles": ["${workspaceFolder}/extension/out/**/*.js"],
 			"preLaunchTask": "npm: watch",
 			"env": {
-                "VNC_URL": "https://jointheleague.org",
-				"KST_REPORTING_URL": "http://localhost:8095",
+                
+				"KST_REPORTING_URL": "http://localhost:5000/telem",
                 "KST_CONTAINER_ID": "container-123",
 				"KST_SERVICE_ID": "service-123",
 				"KST_SERVICE_NAME": "service-name",
-				"KST_REPORT_RATE": "10",
+				"KST_REPORT_RATE": "3",
 				"KST_DEBUG": "false",
 				"KST_ROOT_DIR": "${workspaceRoot}/test",
-				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/.jtl/syllabus.yaml",
+
+				"JTL_VNC_URL": "https://jointheleague.org",
+				"JTL_SYLLABUS": "${workspaceRoot}/test/class/syllabus-test.yaml",
 				"JTL_SYLLABUS_DEV": "1" // Prevent moving activity bar and other UI simplifications
             }
 		},
@@ -48,13 +50,15 @@
 			"outFiles": ["${workspaceFolder}/extension/out/**/*.js"],
 			"preLaunchTask": "npm: watch",
 			"env": {
-                "VNC_URL": "https://jointheleague.org",
+                
 				"KST_REPORTING_URL": "http://localhost:5000/telem",
                 "KST_CONTAINER_ID": "container-123",
 				"KST_SERVICE_ID": "service-123",
 				"KST_SERVICE_NAME": "service-name",
 				"KST_REPORT_RATE": "1000",
 				"KST_DEBUG": "false",
+
+				"JTL_VNC_URL": "https://jointheleague.org",
 				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/syllabus/test/syllabus.yaml"
             }
 		}

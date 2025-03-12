@@ -43,7 +43,7 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
     });
 }
 
-function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider | null {
+function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider {
 
     //
     // Create the Tree Data Provider
@@ -55,41 +55,42 @@ function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider | null
 
     return lessonProvider;
 }
+export function activateLessonBrowser(context: vscode.ExtensionContext): Thenable<SyllabusProvider> {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let lessonProvider: SyllabusProvider = createTreeDP(context);
 
-export async function activateLessonBrowser(context: vscode.ExtensionContext) {
-    let lessonProvider = createTreeDP(context);
+            const config = vscode.workspace.getConfiguration('jtl.syllabus');
+            const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
 
-    if (!lessonProvider) {
-        return;
-    }
+            context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
 
+            if (!isDevMode) {
+                /**
+                 * Reconfigure the views and settings to make the lesson browser simpler for students. 
+                 */
+                await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
+                await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
+                await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
 
-
-    const config = vscode.workspace.getConfiguration('jtl.syllabus');
-    const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
-    
-    context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
-
-    if (!isDevMode) {
-        /**
-         * Reconfigure the views and settings to make the lesson browser simpler for students. 
-         */
-        await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
-        await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
-        await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
-
-        // Unhide the activity bar when the extension is deactivated
-        context.subscriptions.push({
-            dispose: () => {
-                vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
-                vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
-                vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
+                // Unhide the activity bar when the extension is deactivated
+                context.subscriptions.push({
+                    dispose: () => {
+                        vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
+                        vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
+                        vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
+                    }
+                });
             }
-        });
-    }
 
-    console.log('Lesson browser activated');
+            console.log('Lesson browser activated');
+            resolve(lessonProvider);
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
+
 
 export function deactivateLessonBrowser() {
     console.log('Lesson browser deactivated');
