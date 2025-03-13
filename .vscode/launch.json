@@ -31,10 +31,13 @@
                 "KST_CONTAINER_ID": "container-123",
 				"KST_SERVICE_ID": "service-123",
 				"KST_SERVICE_NAME": "service-name",
-				"KST_REPORT_RATE": "3",
+				"KST_REPORT_INTERVAL": "3",
 				"KST_DEBUG": "false",
 				"KST_ROOT_DIR": "${workspaceRoot}/test",
 
+				"JTL_USERNAME": "test-user",
+				"JTL_CLASS_ID": "1",
+				"JTL_PASSWORD": "password",
 				"JTL_VNC_URL": "https://jointheleague.org",
 				"JTL_SYLLABUS": "${workspaceRoot}/test/class/syllabus-test.yaml",
 				"JTL_SYLLABUS_DEV": "1" // Prevent moving activity bar and other UI simplifications

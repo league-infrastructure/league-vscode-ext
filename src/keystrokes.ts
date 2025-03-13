@@ -5,6 +5,7 @@ import * as http from 'http';
 import { URL } from 'url';
 import * as crypto from 'crypto';
 import { SyllabusProvider } from './SyllabusProvider';
+import { NumberQueue } from './FixedQueue';
 
 function generateId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -30,7 +31,9 @@ interface KeystrokeData {
     keystrokes: number; // Latest report of number of keystrokes in the last interval
     average30m: number; // Average keystrokes per second over the last 30 minutes
     average5m: number; // Average keystrokes per second over the last 5 minutes
-    memory: number; // Memory usage in MB
+    average1m: number; // Average keystrokes per second over the last 5 minutes
+    sysMemory: number; // Memory usage in bytes
+    processMemory: number; // Memory usage in bytes
     reportingRate: number; // How often to report, reports per second. 
     instanceId: string; // Unique identifier for the instance
     fileStats: Record<string, FileKeystrokeStats>; // Keystroke statistics per file
@@ -41,7 +44,7 @@ function hashKeystrokeData(data: KeystrokeData): string {
     const hash = crypto.createHash('sha256');
 
     // Exclude the timestamp property from the hash calculation
-    const { timestamp, ...dataWithoutTimestamp } = data;
+    const { timestamp, average5m, ...dataWithoutTimestamp } = data;
 
     // Convert the object to a JSON string and update the hash
     hash.update(JSON.stringify(dataWithoutTimestamp));
@@ -55,9 +58,7 @@ export class KeystrokeMonitor {
     private totalKeystrokes: number = 0;
     private fileKeystrokes: Map<string, FileKeystrokeStats> = new Map();
     private interval: NodeJS.Timeout | undefined;
-    private average30m: number = 0;
-    private average5m: number = 0;
-    private nReports: number = 0;
+    private rateQueue: NumberQueue;
     private readonly reportDir: string;
     private readonly reportingUrl: string;
     private readonly reportInterval: number;
@@ -72,6 +73,9 @@ export class KeystrokeMonitor {
         this.reportingUrl = process.env.KST_REPORTING_URL || '';
 
         this.reportInterval = parseInt(process.env.KST_REPORT_INTERVAL || '30', 10); // Seconds between reports
+
+        this.rateQueue = new NumberQueue(30 * 6 * this.reportInterval); // 30 minutes of data
+
         this.debug = process.env.KST_DEBUG === 'true' || false;
 
         if (this.reportingUrl) {
@@ -130,19 +134,23 @@ export class KeystrokeMonitor {
     }
 
     private async getMemoryUsage(): Promise<number> {
-        const memoryUsageFilePath = '/sys/fs/cgroup/memory.current';
+        try {
+            const memoryUsageFilePath = '/sys/fs/cgroup/memory.current';
 
-        const memoryUsageContent = await vscode.workspace.fs.readFile(vscode.Uri.file(memoryUsageFilePath));
-        const memoryUsage = parseInt(memoryUsageContent.toString(), 10); // Convert from bytes to MB
-        return memoryUsage;;
+            const memoryUsageContent = await vscode.workspace.fs.readFile(vscode.Uri.file(memoryUsageFilePath));
+            const memoryUsage = parseInt(memoryUsageContent.toString(), 10); // Convert from bytes to MB
+            return memoryUsage;
+        } catch (error) {
+            return -1;
+        }        
     }
 
-    private calcRunningAverage(newData: number, currentAverage: number, averagePeriod: number): number {
+    private calcRunningAverage(minutes: number): number {
 
-        const reportingIntervalsIn30Minutes = averagePeriod * (60 / this.reportInterval);
-        const queueSize = Math.min(++this.nReports, reportingIntervalsIn30Minutes);
+        const nReports = minutes * 60 / this.reportInterval
+        const sum = this.rateQueue.sum(nReports);
 
-        return ((currentAverage * (queueSize - 1)) + newData) / queueSize;
+        return sum / (nReports * this.reportInterval);
     }
 
 
@@ -150,14 +158,13 @@ export class KeystrokeMonitor {
 
         const currentKPS = this.totalKeystrokes / this.reportInterval;
         
-        this.average30m = this.calcRunningAverage(currentKPS, this.average30m, 30);
-        this.average5m = this.calcRunningAverage(currentKPS, this.average5m, 5);
-
         // Convert Map to plain object for JSON serialization
         const fileStats: Record<string, FileKeystrokeStats> = {};
         this.fileKeystrokes.forEach((stats, path) => {
             fileStats[path] = stats;
         });
+
+    
 
         const memoryUsage = this.getMemoryUsage();
 
@@ -165,23 +172,28 @@ export class KeystrokeMonitor {
             timestamp: new Date().toISOString(),
             instanceId: this.instanceId,
             keystrokes: this.totalKeystrokes,
-            average30m: this.average30m,
-            average5m: this.average5m,
-            memory: process.memoryUsage().rss / 1024 / 1024,
+            average30m: this.calcRunningAverage(30),
+            average5m: this.calcRunningAverage(5),
+            average1m: this.calcRunningAverage(1),
+            processMemory: process.memoryUsage().rss,
+            sysMemory: parseInt(memoryUsage.toString(), 10),
             reportingRate: this.reportInterval,
             fileStats: fileStats,
             completions: this.syllabusProvider.getCompletions(),   
             image: process.env.JTL_IMAGE_URI || 'unknown',       
             repo:  process.env.JTL_REPO   || 'unknown',
             syllabus: process.env.JTL_SYLLABUS || 'unknown',
-            class_id: process.env.JTL_CLASS_ID || 'unknown',
+            class_id: process.env.JTL_CLASS_ID || '-1' ,
             username: process.env.JTL_USERNAME || 'unknown'
         };
 
+        console.log('Keystroke data:', this.rateQueue.getItems());
         return data
     }
 
     private async reportMetrics() {
+
+        this.rateQueue.enqueue(this.totalKeystrokes);
 
         const data = this.makeKeyStrokeData();
 
