@@ -139,8 +139,10 @@ export class KeystrokeMonitor {
 
             const memoryUsageContent = await vscode.workspace.fs.readFile(vscode.Uri.file(memoryUsageFilePath));
             const memoryUsage = parseInt(memoryUsageContent.toString(), 10); // Convert from bytes to MB
+          
             return memoryUsage;
         } catch (error) {
+            // console.error('Failed to read memory usage:', error);
             return -1;
         }        
     }
@@ -154,7 +156,7 @@ export class KeystrokeMonitor {
     }
 
 
-    private makeKeyStrokeData(): KeystrokeData {
+    private async makeKeyStrokeData(): Promise<KeystrokeData> {
 
         const currentKPS = this.totalKeystrokes / this.reportInterval;
         
@@ -166,7 +168,7 @@ export class KeystrokeMonitor {
 
     
 
-        const memoryUsage = this.getMemoryUsage();
+        const memoryUsage = await this.getMemoryUsage();
 
         const data: KeystrokeData = {
             timestamp: new Date().toISOString(),
@@ -187,7 +189,7 @@ export class KeystrokeMonitor {
             username: process.env.JTL_USERNAME || 'unknown'
         };
 
-        console.log('Keystroke data:', this.rateQueue.getItems());
+        
         return data
     }
 
@@ -195,9 +197,7 @@ export class KeystrokeMonitor {
 
         this.rateQueue.enqueue(this.totalKeystrokes);
 
-        const data = this.makeKeyStrokeData();
-
-        //console.log('Reporting keystrokes:', data);
+        const data = await this.makeKeyStrokeData();
 
         this.sendHttpRequest(data);
         this.writeToReportDir(data);
@@ -295,35 +295,10 @@ export class KeystrokeMonitor {
 
         let ts = new Date().toISOString().split('.')[0] + 'Z';
 
-        const fileBase = `${this.reportDir}/keystrokes/${this.instanceId}`;
-
-        let filePath = '';
-        let lastPath = fileBase + '/last.json'
-
-        // If the data is the same as the last report, write to the last.json file, so 
-        // we still get a record of the last report even if it's the same as the current one, 
-        // but we don't clog up the directory. 
-        if (this.lastReport && hashKeystrokeData(data) === hashKeystrokeData(this.lastReport)) {
-            filePath = lastPath;
-        } else {
-            filePath = fileBase + `/${ts}.json`;
-
-            // Delete the last.json file if it exists
-            try {
-                const lastUri = vscode.Uri.file(lastPath);
-                const lastFileExists = await vscode.workspace.fs.stat(lastUri).then(() => true, () => false);
-                if (lastFileExists) {
-                    vscode.workspace.fs.delete(lastUri, { useTrash: false });
-                }
-            } catch (error) {
-                if (this.debug) {
-                    console.error('Failed to delete last.json:', error);
-                }
-            }
-        }
+        const ksfile = `${this.reportDir}/keystrokes.json}`;
 
         // Write the data to the file
-        await vscode.workspace.fs.writeFile(vscode.Uri.file(filePath), Buffer.from(JSON.stringify(data, null, 2)));
+        await vscode.workspace.fs.writeFile(vscode.Uri.file(ksfile), Buffer.from(JSON.stringify(data, null, 2)));
     }
 }
 

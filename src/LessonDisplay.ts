@@ -191,7 +191,7 @@ export class LessonDisplay {
 
 			await this.openDisplayTab();
 			await vscode.commands.executeCommand('workbench.action.moveEditorToLastGroup');
-			
+
 		} else if (this.tabSpec.includes('lED')) {
 
 			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoColumns')
@@ -201,22 +201,22 @@ export class LessonDisplay {
 
 			await this.openDisplayTab();
 			await vscode.commands.executeCommand('workbench.action.moveEditorToLastGroup');
-		
+
 		} else if (this.tabSpec.includes('Led')) {
 
 			this.lessonEditor = await this.openLessonTab();
-		
+
 		} else {
 
 			const lessonPromise = this.openLessonTab();
 			const exercisePromise = this.openExerciseTab();
 			const displayPromise = this.openDisplayTab();
-			
+
 
 			this.lessonEditor = await lessonPromise;
 			this.exerciseEditor = await exercisePromise;
 			await displayPromise;
-			
+
 		}
 
 		const terminalPromise = this.openTerminalTab();
@@ -244,17 +244,17 @@ export class LessonDisplay {
 
 		while (Date.now() - start < timeout) {
 			if (vscode.window.tabGroups.all[0].tabs.length === expectedTabs) {
-				//console.log('All tabs opened', Date.now() - start );
+			
 				break;
 			}
-			//console.log('Waiting for tabs to open', vscode.window.tabGroups.all.length, expectedTabs);
+		
 			await new Promise(resolve => setTimeout(resolve, interval));
 		}
 
 		// Now we can visit the tabs and categorize them. 
 
 		vscode.window.tabGroups.all[0].tabs.forEach((tab, tabIndex) => {
-			console.log(`  Tab ${tabIndex}: ${tab.label}`);
+			// console.log(`  Tab ${tabIndex}: ${tab.label}`);
 			if (tab.input instanceof vscode.TabInputText) {
 				//console.log(`    URI (T): ${tab.input.uri.toString()}`);
 				this.exerciseTab = tab;

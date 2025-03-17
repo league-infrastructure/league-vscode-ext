@@ -9,6 +9,7 @@ ver:
 	@echo $(VERSION)
 
 build:
+	npm run compile
 	vsce package
 
 push: build
