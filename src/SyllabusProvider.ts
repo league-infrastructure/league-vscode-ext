@@ -202,13 +202,15 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         //
         // Load the Syllabus file from either the env var or the config
     
-        const jtlSyllabusConfig = vscode.workspace.getConfiguration('jtl').get<string>('syllabus.path');
+        const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
+
+        const jtlSyllabusConfig = config.get<string>('syllabus.path');
         const jtlSyllabusEnv = process.env.JTL_SYLLABUS;
     
         // determine which value to prefer
         let jtlSyllabus;
     
-        const pref = vscode.workspace.getConfiguration('jtl').get<boolean>('syllabus.preferEnv');
+        const pref =config.get<boolean>('syllabus.preferEnv');
         if (pref) {
             jtlSyllabus = jtlSyllabusEnv || jtlSyllabusConfig;
         } else {

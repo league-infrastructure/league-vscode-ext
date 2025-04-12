@@ -6,6 +6,7 @@ import { URL } from 'url';
 import * as crypto from 'crypto';
 import { SyllabusProvider } from './SyllabusProvider';
 import { NumberQueue } from './FixedQueue';
+import { report } from 'process';
 
 function generateId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -67,16 +68,15 @@ export class KeystrokeMonitor {
     private lastReport: KeystrokeData | undefined;
 
     constructor(context: vscode.ExtensionContext, private syllabusProvider: SyllabusProvider) {
-
         this.instanceId = generateId();
         this.reportDir = process.env.KST_REPORT_DIR || vscode.extensions.getExtension(context.extension.id)?.extensionPath || '';
-        this.reportingUrl = process.env.KST_REPORTING_URL || '';
 
-        this.reportInterval = parseInt(process.env.KST_REPORT_INTERVAL || '30', 10); // Seconds between reports
+        const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
+        this.reportingUrl = config.get<string>('telemetry.reporting_url') || process.env.KST_REPORTING_URL || '';
+        this.reportInterval = config.get<number>('telemetry.report_interval') || parseInt(process.env.KST_REPORT_INTERVAL || '30', 10); // Seconds between reports
+        this.debug = config.get<boolean>('telemetry.debug') || !!process.env.KST_DEBUG
 
         this.rateQueue = new NumberQueue(30 * 6 * this.reportInterval); // 30 minutes of data
-
-        this.debug = process.env.KST_DEBUG === 'true' || false;
 
         if (this.reportingUrl) {
             console.log(`Keystrokes will be reported to: ${this.reportingUrl}`);
@@ -91,7 +91,12 @@ export class KeystrokeMonitor {
         }
 
         console.log('Keystroke monitor initialized with params: ',
-            { reportingUrl: this.reportingUrl, reportRate: this.reportInterval, instanceId: this.instanceId });
+            { debug: this.debug, 
+              reportingUrl: this.reportingUrl,
+              reportRate: this.reportInterval, 
+              instanceId: this.instanceId , 
+              reportDir: this.reportDir
+            });
     }
 
     public start() {
@@ -138,11 +143,19 @@ export class KeystrokeMonitor {
             const memoryUsageFilePath = '/sys/fs/cgroup/memory.current';
 
             const memoryUsageContent = await vscode.workspace.fs.readFile(vscode.Uri.file(memoryUsageFilePath));
+        
+            if (this.debug) {
+                console.log('Contents of memory file"', memoryUsageContent.toString());
+            }
+        
             const memoryUsage = parseInt(memoryUsageContent.toString(), 10); // Convert from bytes to MB
-          
+        
+
             return memoryUsage;
         } catch (error) {
-            // console.error('Failed to read memory usage:', error);
+            if (this.debug) {
+                console.error('Failed to read memory usage:', error);
+            }
             return -1;
         }        
     }
@@ -198,6 +211,10 @@ export class KeystrokeMonitor {
         this.rateQueue.enqueue(this.totalKeystrokes);
 
         const data = await this.makeKeyStrokeData();
+
+        if (this.debug) {
+            console.log('Reporting metrics:', data);
+        }
 
         this.sendHttpRequest(data);
         this.writeToReportDir(data);

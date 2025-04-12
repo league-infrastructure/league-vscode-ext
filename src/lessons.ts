@@ -33,14 +33,7 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
 
     context.subscriptions.push({ dispose: () => watcher.close() });
 
-    // Watch for changes in configuration
-    vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration('jtl.syllabus.path') || e.affectsConfiguration('jtl.syllabus.preferEnv')) {
-            lessonProvider.updateSyllabus(context);
-            setupFileWatcher(lessonProvider.sylFs, lessonProvider, context);
-        }
 
-    });
 }
 
 function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider {
@@ -60,7 +53,7 @@ export function activateLessonBrowser(context: vscode.ExtensionContext): Thenabl
         try {
             let lessonProvider: SyllabusProvider = createTreeDP(context);
 
-            const config = vscode.workspace.getConfiguration('jtl.syllabus');
+            const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
             const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
 
             context.globalState.update('jtl.syllabus.isDevMode', isDevMode);

@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "media/flag.png",
-	"version": "1.202500314.6",
+	"version": "1.202500318.2",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -158,20 +158,35 @@
 					},
 					"description": "Hide specific activity bar icons"
 				},
-				"jtl.syllabus.path": {
+				"jtl.lesson_browser.syllabus.path": {
 					"type": "string",
 					"default": null,
 					"description": "Path to the JTL syllabus file. Synonym is env var JTL_SYLLABUS"
 				},
-				"jtl.syllabus.preferEnv": {
+				"jtl.lesson_browser.preferEnv": {
 					"type": "boolean",
 					"default": false,
 					"description": "Determines if the environment variable overrides the config setting."
 				},
-				"jtl.syllabus.dev": {
+				"jtl.lesson_browser.dev": {
 					"type": "boolean",
 					"default": false,
 					"description": "If true, skips UI reconfiguration for development purposes. Synonym is env var JTL_SYLLABUS_DEV"
+				},
+				"jtl.lesson_browser.telemetry.report_interval": {
+					"type": "number",
+					"default": 30,
+					"description": "Interval in seconds for reporting keystroke metrics. Overrides KST_REPORT_INTERVAL."
+				},
+				"jtl.lesson_browser.telemetry.reporting_url": {
+					"type": "string",
+					"default": "",
+					"description": "URL for reporting keystroke metrics. Overrides process.env.KST_REPORTING_URL."
+				},
+				"jtl.lesson_browser.telemetry.debug": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable debug mode for keystroke monitoring. Overrides KST_DEBUG."
 				}
 			}
 		}

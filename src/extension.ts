@@ -21,7 +21,18 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize actions
     activateActions(context);
 
-
+    vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration('jtl.lesson_browser')) {
+            vscode.window.showInformationMessage(
+                'Configuration for Lesson Browser has changed. Please reload the window for changes to take effect.',
+                'Reload'
+            ).then((selection) => {
+                if (selection === 'Reload') {
+                    vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            });
+        }
+    });
 }
 
 export function deactivate() {
