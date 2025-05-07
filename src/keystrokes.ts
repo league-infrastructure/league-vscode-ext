@@ -154,7 +154,7 @@ export class KeystrokeMonitor {
             return memoryUsage;
         } catch (error) {
             if (this.debug) {
-                console.error('Failed to read memory usage:', error);
+                console.error('Failed to read memory usage');
             }
             return -1;
         }        

@@ -7,6 +7,6 @@
     },
     "jtl.lesson_browser.telemetry.debug": false,
     "jtl.lesson_browser.dev": true,
-    "jtl.lesson_browser.telemetry.report_interval": 1,
+    "jtl.lesson_browser.telemetry.report_interval": 120,
 
 }

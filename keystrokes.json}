@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-05-07T04:18:50.350Z",
+  "instanceId": "kqpG4H2O",
+  "keystrokes": 0,
+  "average30m": 0,
+  "average5m": 0,
+  "average1m": 0,
+  "processMemory": 628060160,
+  "sysMemory": -1,
+  "reportingRate": 120,
+  "fileStats": {},
+  "completions": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "image": "unknown",
+  "repo": "unknown",
+  "syllabus": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/.jtl/syllabus.yaml",
+  "class_id": "-1",
+  "username": "unknown"
+}
