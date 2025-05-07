@@ -107,7 +107,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     private firstExpanded: boolean = false;
 
-    private itemMap: Map<number, SyllabusItem> = new Map();
+    public itemMap: Map<number, SyllabusItem> = new Map();
 
     private nextNodeId: number = 0;
     private activeLessonItem: LessonItem | null = null;
@@ -117,16 +117,22 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
       
 
     constructor(context: vscode.ExtensionContext) {
-        
         this.register(context);
-
         this.root = this.updateSyllabus(context);
 
+        // Setup a small delay to ensure the tree is fully initialized
 
-        if (!context.globalState.get('jtl.syllabus.isDevMode', false)) {
-            this.openLesson(null);
-        }
-
+        // Use setTimeout to defer opening the first lesson until after initialization
+        setTimeout(() => {
+            const firstLesson = this.nextIncompleteLesson(null);
+            if (firstLesson) {
+                this.openLesson(firstLesson);
+            } else if (this.itemMap.size > 0) {
+                // If all lessons are completed, open the first one
+                this.openLesson(0);
+            }
+        }, 250);
+        
     }
 
     public register(context: vscode.ExtensionContext): any {
@@ -428,33 +434,41 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
      * and advances to the next incomplete lesson
      */
     setCompletion(arg?: LessonItem | vscode.Uri | null, status: boolean = true): void {
-
-        if (!arg && this.activeLessonItem) {
-            return this.setCompletion(this.activeLessonItem, status);
-        } else if (!arg) {
-            console.log('SetCompletion: arg is null and no active lesson');
-            return;
+        let targetLesson: LessonItem | null = null;
+        
+        // Handle different argument types
+        if (!arg) {
+            // No argument provided, use the active lesson
+            targetLesson = this.activeLessonItem;
         } else if ('scheme' in arg) {
             // It is a URI, from the button in the title bar of the editor menu
-            return this.setCompletion(this.activeLessonItem, status);
+            targetLesson = this.activeLessonItem;
+        } else if (arg instanceof LessonItem) {
+            // It's a LessonItem directly
+            targetLesson = arg;
         }
 
-        if (!arg || !(arg instanceof LessonItem)) {
-            console.log('SetCompletion: Argument is not a LessonItem:', arg);
+        if (!targetLesson) {
+            console.log('SetCompletion: No valid lesson target found');
             return;
         }
 
-        // Always set to completed (true) regardless of current state
-        arg.setCompletionStatus(status);
-        this.writeCompletion();
-        this.refresh();
+        // Only update status if it's different from the current state
+        if (targetLesson.getCompletionStatus() !== status) {
+            // Set completion status
+            targetLesson.setCompletionStatus(status);
+            this.writeCompletion();
+            this.refresh();
 
-        // Get the next lesson and open it if it exists
-        const nextLessonItem = this.nextIncompleteLesson(arg);
-        if (status && nextLessonItem && nextLessonItem instanceof LessonItem) {
-            this.openLesson(nextLessonItem);
-        } else {
-            console.log(`No next lesson after ${arg.nodeId}`);
+            // Get the next lesson and open it if it exists
+            if (status) {
+                const nextLessonItem = this.nextIncompleteLesson(targetLesson);
+                if (nextLessonItem && nextLessonItem instanceof LessonItem) {
+                    this.openLesson(nextLessonItem);
+                } else {
+                    console.log(`No next lesson after ${targetLesson.nodeId}`);
+                }
+            }
         }
     }
 

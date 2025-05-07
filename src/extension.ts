@@ -4,22 +4,28 @@ import { activateKeyRate } from './keystrokes';
 import { activateLessonBrowser, deactivateLessonBrowser } from './lessons';
 import { activateJupyterDefault } from './jupykernel';
 import { activateActions } from './actions';
+import { SyllabusProvider } from './SyllabusProvider';
 
 export async function activate(context: vscode.ExtensionContext) {
     // Initialize browser feature
     activateVirtDisplay(context);
 
-     // Initialize lesson browser
-    activateLessonBrowser(context).then((syllabusProvider) => {
-        // Initialize keystroke monitoring with syllabus provider
+    try {
+        // Initialize lesson browser first and await its completion
+        const syllabusProvider = await activateLessonBrowser(context);
+        
+        // Only initialize keystroke monitoring after we have a valid syllabusProvider
         activateKeyRate(context, syllabusProvider);
-    });
-
-    // Initialize Jupyter kernel
-    activateJupyterDefault(context);
-
-    // Initialize actions
-    activateActions(context);
+        
+        // Initialize Jupyter kernel
+        activateJupyterDefault(context);
+        
+        // Initialize actions
+        activateActions(context);
+    } catch (error) {
+        console.error('Failed to initialize lesson browser:', error);
+        vscode.window.showErrorMessage(`Failed to initialize lesson browser: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('jtl.lesson_browser')) {
@@ -37,8 +43,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     // Cleanup will be handled automatically through the disposables
-
-    // Deactivate lesson browser
     deactivateLessonBrowser();
 }
 

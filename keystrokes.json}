@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-05-07T21:23:37.970Z",
+  "timestamp": "2025-05-07T21:35:37.989Z",
   "instanceId": "m8XenLny",
   "keystrokes": 0,
   "average30m": 0,
   "average5m": 0,
   "average1m": 0,
-  "processMemory": 893964288,
+  "processMemory": 863281152,
   "sysMemory": -1,
   "reportingRate": 120,
   "fileStats": {},
