@@ -10,6 +10,7 @@ export interface Lesson {
     display?: boolean;
     lessons?: Lesson[]; // Nested lessons (e.g., "Turtle Tricks A")
     terminal?: boolean;
+    uuid?: string;
 
 }
 
@@ -18,6 +19,7 @@ export interface Module {
     overview?: string;
     lessons?: Lesson[];
     isOpen?: boolean;
+    uuid?: string;
 
 }
 
@@ -27,6 +29,7 @@ export interface Syllabus {
     module_dir: string;
 	filePath?: string|undefined;
     modules: Module[];
+
 
 }
 
