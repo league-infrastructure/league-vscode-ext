@@ -108,6 +108,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     private firstExpanded: boolean = false;
 
     public itemMap: Map<number, SyllabusItem> = new Map();
+    public uidMap: Map<string, SyllabusItem> = new Map();
 
     private nextNodeId: number = 0;
     private activeLessonItem: LessonItem | null = null;
@@ -325,6 +326,8 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         if(item instanceof LessonItem) {
             item.nodeId = this.nextNodeId;
             this.itemMap.set(item.nodeId, item);
+            this.uidMap.set(item.data.uid || String(item.nodeId), item);
+            
             this.nextNodeId++;
         }
     }
@@ -336,9 +339,9 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
             if (Array.isArray(completedLessons)) {
 
-                completedLessons.forEach((id: number) => {
+                completedLessons.forEach((id: string) => {
                     
-                    const lessonItem = this.itemMap.get(id);
+                    const lessonItem = this.uidMap.get(id);
 
                     if (lessonItem && lessonItem instanceof LessonItem) {
                         lessonItem.setCompletionStatus(true);
@@ -352,21 +355,16 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         }
     }
 
-    public getCompletions(): number[] {
-        const completedLessons: number[] = [];
-        this.itemMap.forEach((item, id) => {
+    writeCompletion(): void {
+
+        let completedLessons: string[] = [];
+
+        this.uidMap.forEach((item, id) => {
+            
             if (item instanceof LessonItem && item.getCompletionStatus()) {
-                completedLessons.push(id);
+                completedLessons.push(item.data.uid || String(id));              
             }
         });
-        
-        return completedLessons.sort((a, b) => a - b);
-    }
-
-    
-
-    writeCompletion(): void {
-        const completedLessons: number[] = this.getCompletions();
 
         try {
 
@@ -374,10 +372,21 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         } catch (error) {
             console.error('Error writing completion file:', error);
         }
-
-
     }
 
+    public getCompletions(): string[] {
+        const completedLessons: string[] = [];
+
+        this.uidMap.forEach((item, id) => {
+            if (item instanceof LessonItem && item.getCompletionStatus()) {
+                completedLessons.push(id);
+            }
+        });
+        
+        return completedLessons.sort((a, b) => a.localeCompare(b));
+    }
+
+    
     nextIncompleteLesson(lesson: LessonItem | number | null): LessonItem | null {
 
         let nodeId;

@@ -38,7 +38,7 @@ interface KeystrokeData {
     reportingRate: number; // How often to report, reports per second. 
     instanceId: string; // Unique identifier for the instance
     fileStats: Record<string, FileKeystrokeStats>; // Keystroke statistics per file
-    completions: number[]; // Lesson Completions
+    completions: string[]; // Lesson Completions
 }
 
 function hashKeystrokeData(data: KeystrokeData): string {
