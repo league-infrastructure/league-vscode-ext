@@ -62,7 +62,7 @@
 				"KST_DEBUG": "false",
 
 				"JTL_VNC_URL": "https://jointheleague.org",
-				"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/.jtl/syllabus.yaml"
+				//"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/.jtl/syllabus.yaml"
             }
 		}
 	]
