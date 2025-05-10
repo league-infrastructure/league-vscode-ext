@@ -1,12 +1,21 @@
 import * as vscode from 'vscode';
 import { activateVirtDisplay } from './virtdisplay';
 import { activateKeyRate } from './keystrokes';
-import { activateLessonBrowser, deactivateLessonBrowser } from './lessons';
+import { activateLessonBrowser, deactivateLessonBrowser, simplifyUI, defaultUI } from './lessons';
 import { activateJupyterDefault } from './jupykernel';
 import { activateActions } from './actions';
 import { SyllabusProvider } from './SyllabusProvider';
+import { hideFiles, unhideFiles } from './workspace-settings';
 
 export async function activate(context: vscode.ExtensionContext) {
+    // Register UI commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jtl-syllabus.simplifyUI', simplifyUI),
+        vscode.commands.registerCommand('jtl-syllabus.defaultUI', defaultUI),
+        vscode.commands.registerCommand('jtl-syllabus.hideFiles', hideFiles),
+        vscode.commands.registerCommand('jtl-syllabus.unhideFiles', unhideFiles)
+    );
+
     // Initialize browser feature
     activateVirtDisplay(context);
 
@@ -22,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
         
         // Initialize actions
         activateActions(context);
+        
     } catch (error) {
         console.error('Failed to initialize lesson browser:', error);
         vscode.window.showErrorMessage(`Failed to initialize lesson browser: ${error instanceof Error ? error.message : String(error)}`);

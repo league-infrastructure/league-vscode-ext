@@ -61,7 +61,7 @@
 				"KST_REPORT_INTERVAL": "120",
 				"KST_DEBUG": "false",
 
-				"JTL_VNC_URL": "https://jointheleague.org",
+				//"JTL_VNC_URL": "https://jointheleague.org",
 				//"JTL_SYLLABUS": "/Users/eric/proj/league-projects/curriculum/Python-Apprentice/lessons/.jtl/syllabus.yaml"
             }
 		}

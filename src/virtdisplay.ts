@@ -6,11 +6,19 @@ export function activateVirtDisplay(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('jointheleague.openVirtualDisplay', async () => {
-            const vncUrl = process.env.JTL_VNC_URL;
+            let vncUrl = process.env.JTL_VNC_URL;
 
             if (!vncUrl) {
-                vscode.window.showErrorMessage('JTL_VNC_URL environment variable is not set');
-                return;
+                // Check if running in codespace and create URL based on CODESPACE_NAME
+                if (process.env.CODESPACE_NAME) {
+                    vncUrl = `https://${process.env.CODESPACE_NAME}-6080.app.github.dev/`;
+                    console.log(`Using codespace VNC URL: ${vncUrl}`);
+                } else {
+                    // If by line 23 we still don't have a vncUrl, use the configured default
+                    const config = vscode.workspace.getConfiguration('jtl.lesson_browser.virtual_display');
+                    vncUrl = config.get('default_url') as string || 'https://zombo.com/';
+                    console.log(`Using default VNC URL from configuration: ${vncUrl}`);
+                }
             }
 
             try {

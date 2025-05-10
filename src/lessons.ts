@@ -7,6 +7,7 @@ import * as path from 'path';
 
 import { SyllabusProvider } from './SyllabusProvider';
 import { SylFs, Syllabus } from './models';
+import { hideFiles, unhideFiles } from './workspace-settings';
 
 class NoSyllabusError extends Error {
     constructor(message: string) {
@@ -15,8 +16,31 @@ class NoSyllabusError extends Error {
     }
 }
 
+/**
+ * Simplifies the UI for students by moving the activity bar to the bottom,
+ * disabling the minimap, and focusing on the lesson browser.
+ */
+export async function simplifyUI() {
+    await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
+    await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
+    await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
+}
 
-
+/**
+ * Restores the UI to default settings by moving the activity bar to its default position,
+ * enabling the minimap, and showing the activity bar.
+ */
+export async function defaultUI() {
+    // Enable the minimap
+    await vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
+    
+    // Move activity bar back to default position
+    await vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
+    
+    // VS Code doesn't have a direct configuration for activityBar.visible,
+    // so we need to use the command to show the activity bar if it's hidden
+    await vscode.commands.executeCommand('workbench.action.toggleActivityBarVisibility', true);
+}
 
 function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, context: vscode.ExtensionContext): void {
     //
@@ -32,7 +56,6 @@ function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, contex
     });
 
     context.subscriptions.push({ dispose: () => watcher.close() });
-
 
 }
 
@@ -58,21 +81,20 @@ export function activateLessonBrowser(context: vscode.ExtensionContext): Thenabl
             context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
 
 
-
             if (!isDevMode) {
                 /**
                  * Reconfigure the views and settings to make the lesson browser simpler for students. 
                  */
-                await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
-                await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
-                await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
+                await simplifyUI();
+                
+                // Hide system files and other files that would distract students
+                await hideFiles();
 
-                // Unhide the activity bar when the extension is deactivated
+                // Restore default UI settings when the extension is deactivated
                 context.subscriptions.push({
                     dispose: () => {
-                        vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
-                        vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, true);
-                        vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
+                        defaultUI();
+                        unhideFiles();
                     }
                 });
             }
