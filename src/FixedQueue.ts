@@ -1,3 +1,10 @@
+
+/**
+ * @file FixedQueue.ts
+ * @description Fixed size queue for computing running averages. The queue is
+ * needed instead of a cumulative average, because we want to the average to 
+ * be zero when the last use report is older than the averaging window. 
+ */
 class FixedQueue<T> {
 	protected queue: T[];
 	private maxSize: number;

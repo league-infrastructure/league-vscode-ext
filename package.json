@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "media/flag.png",
-	"version": "1.20250509.6",
+	"version": "1.20250510.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -36,7 +36,7 @@
 				{
 					"id": "lessonBrowserView",
 					"name": "Lessons",
-					"initialSize": 5 
+					"initialSize": 5
 				},
 				{
 					"id": "lessonActionsView",
@@ -115,7 +115,6 @@
 				}
 			}
 		],
-
 		"menus": {
 			"editor/context": [
 				{
@@ -136,7 +135,6 @@
 					"command": "lessonBrowser.toggleCompletion",
 					"group": "navigation"
 				}
-	
 			],
 			"view/item/context": [
 				{
@@ -163,7 +161,6 @@
 					"default": null,
 					"description": "Path to the JTL syllabus file. Synonym is env var JTL_SYLLABUS"
 				},
-
 				"jtl.lesson_browser.dev": {
 					"type": "boolean",
 					"default": false,
@@ -208,6 +205,7 @@
 	"dependencies": {
 		"@types/fs-extra": "^11.0.4",
 		"@vscode/python-extension": "^1.0.5",
+		"fs-extra": "^11.3.0",
 		"js-yaml": "^4.1.0"
 	}
 }
