@@ -1,9 +1,9 @@
 {
-	"name": "jtl-vscode",
+	"name": "jtl-syllabus",
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "media/flag.png",
-	"version": "1.202500318.2",
+	"version": "1.20250509.6",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -163,11 +163,7 @@
 					"default": null,
 					"description": "Path to the JTL syllabus file. Synonym is env var JTL_SYLLABUS"
 				},
-				"jtl.lesson_browser.preferEnv": {
-					"type": "boolean",
-					"default": false,
-					"description": "Determines if the environment variable overrides the config setting."
-				},
+
 				"jtl.lesson_browser.dev": {
 					"type": "boolean",
 					"default": false,

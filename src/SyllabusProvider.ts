@@ -16,6 +16,12 @@ import { SylFs } from './models';
 import { Syllabus, Lesson, Module } from './models';
 import { LessonDisplay } from './LessonDisplay';
 
+enum Where {
+    CodeSpace = 'codespace', // Running on Github codespace
+    CodeServer = 'codeserver', // Running on code-server
+    Local = 'local' // Running locally
+}
+
 function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
 
     let syllabusPath = syllabus.filePath;
@@ -53,6 +59,45 @@ function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
         storageDir,
         completionFilePath
     };
+}
+
+/**
+ * Find the syllabus file path from either the environment variable or configuration
+ * @returns The path to the syllabus file, or false if not found
+ */
+function findSyllabus(): string | false {
+
+    const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
+    const jtlSyllabusConfig = config.get<string>('syllabus.path');
+
+    if(jtlSyllabusConfig) {
+        console.log('JTL Syllabus Config:', jtlSyllabusConfig);
+        return jtlSyllabusConfig;
+    }
+
+
+    const jtlSyllabusEnv = process.env.JTL_SYLLABUS;
+
+    if (jtlSyllabusEnv) {
+        console.log('JTL Syllabus Env:', jtlSyllabusEnv);
+        return jtlSyllabusEnv;
+    }
+
+
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
+        let workspace = vscode.workspace.workspaceFolders[0];
+
+        let defaultPath = path.join(workspace.uri.fsPath, 'lessons/.jtl/syllabus.yaml');
+
+        if (fs.existsSync(defaultPath)) {
+            console.log('JTL Syllabus Default:', defaultPath);
+            return defaultPath;
+        } 
+
+    }
+
+    throw new Error('No syllabus file found in environment variable or configuration');
+    return false;
 }
 
 export async function resolvePath(filePath: string, storageDir: string): Promise<string> {
@@ -116,12 +161,21 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     // sylFS gets setup in updateSyllabus
     public sylFs: SylFs = { syllabusPath: '', coursePath: '', storageDir: '', completionFilePath: '' };
       
+    private where: Where = Where.Local;
 
     constructor(context: vscode.ExtensionContext) {
+
+        if  (process.env.CODESPACES && process.env.CODESPACES !== '') {
+            this.where = Where.CodeSpace;
+        } else if (process.env.LEAGUE_CODESERVER && process.env.LEAGUE_CODESERVER !== '') {
+            this.where = Where.CodeServer;
+        } else {
+            this.where = Where.Local;
+        }
+
+
         this.register(context);
         this.root = this.updateSyllabus(context);
-
-        // Setup a small delay to ensure the tree is fully initialized
 
         // Use setTimeout to defer opening the first lesson until after initialization
         setTimeout(() => {
@@ -209,24 +263,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         //
         // Load the Syllabus file from either the env var or the config
     
-        const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
-
-        const jtlSyllabusConfig = config.get<string>('syllabus.path');
-        const jtlSyllabusEnv = process.env.JTL_SYLLABUS;
-    
-        // determine which value to prefer
-        let jtlSyllabus;
-    
-        const pref =config.get<boolean>('syllabus.preferEnv');
-        if (pref) {
-            jtlSyllabus = jtlSyllabusEnv || jtlSyllabusConfig;
-        } else {
-            jtlSyllabus = jtlSyllabusConfig || jtlSyllabusEnv;
-        }
+        const jtlSyllabus = findSyllabus();
     
         if (!jtlSyllabus) {
-            //throw new NoSyllabusError('JTL_SYLLABUS environment variable or configuration is not set.');
-            return false
+            console.log('No syllabus file found in environment variable or configuration');
+            return false;
         }
     
         const syllabusPath = path.isAbsolute(jtlSyllabus) ? jtlSyllabus : path.join(context.extensionPath, jtlSyllabus);

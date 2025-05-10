@@ -55,8 +55,9 @@ export function activateLessonBrowser(context: vscode.ExtensionContext): Thenabl
 
             const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
             const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
-
             context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
+
+
 
             if (!isDevMode) {
                 /**
