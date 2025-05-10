@@ -46,7 +46,7 @@ jobs:
             echo "release_tag=${{ github.ref_name }}" >> $GITHUB_ENV
           else
             commit_hash=$(echo "${{ github.sha }}" | cut -c1-5)
-            echo "release_tag=latest-${commit_hash}" >> $GITHUB_ENV
+            echo "release_tag=${commit_hash}" >> $GITHUB_ENV
           fi
         shell: bash
 
