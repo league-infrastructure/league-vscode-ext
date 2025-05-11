@@ -1,20 +1,17 @@
 {
-  "timestamp": "2025-05-10T23:52:49.513Z",
-  "instanceId": "ykRm7GI4",
-  "keystrokes": 12,
-  "average30m": 0.006666666666666667,
-  "average5m": 0.04,
+  "timestamp": "2025-05-11T04:39:40.745Z",
+  "instanceId": "j872ofkf",
+  "keystrokes": 0,
+  "average30m": 0,
+  "average5m": 0,
   "average1m": 0,
-  "processMemory": 477327360,
+  "processMemory": 494874624,
   "sysMemory": -1,
   "reportingRate": 120,
-  "fileStats": {
-    "/Users/eric/proj/league-projects/code-server-mono/league-vscode-ext/test/.vscode/settings.json": {
-      "keystrokes": 12,
-      "lastModified": "2025-05-10T23:52:39.157Z"
-    }
-  },
-  "completions": [],
+  "fileStats": {},
+  "completions": [
+    "hqALCHmg"
+  ],
   "image": "unknown",
   "repo": "unknown",
   "syllabus": "unknown",

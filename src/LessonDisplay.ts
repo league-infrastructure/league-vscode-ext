@@ -115,20 +115,12 @@ export class LessonDisplay {
 
 	async openDisplayTab(): Promise<void> {
 		if (this.lesson.display) {
-			const vncUrl = process.env.JTL_VNC_URL;
-
-			if (!vncUrl) {
-				vscode.window.showErrorMessage('JTL_VNC_URL environment variable is not set');
-				return;
-			}
 
 			try {
-				return vscode.commands.executeCommand('simpleBrowser.api.open', vncUrl, {
-					viewColumn: vscode.ViewColumn.Beside, label: 'Virtual Display'
-				}).then(() => {
-					vscode.commands.executeCommand('workbench.action.moveEditorToRightGroup');
-				});
-
+				// Use the existing command that already handles all the VNC URL resolution logic
+				await vscode.commands.executeCommand('jointheleague.openVirtualDisplay');
+				// Move to the right group after opening
+				return vscode.commands.executeCommand('workbench.action.moveEditorToRightGroup');
 			} catch (error) {
 				vscode.window.showErrorMessage(`Failed to execute commands: ${error}`);
 			}
