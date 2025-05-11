@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-05-11T04:39:40.745Z",
+  "timestamp": "2025-05-11T05:23:40.895Z",
   "instanceId": "j872ofkf",
   "keystrokes": 0,
   "average30m": 0,
   "average5m": 0,
   "average1m": 0,
-  "processMemory": 494874624,
+  "processMemory": 299438080,
   "sysMemory": -1,
   "reportingRate": 120,
   "fileStats": {},
