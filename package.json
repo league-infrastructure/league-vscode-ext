@@ -126,12 +126,12 @@
 			},
 			{
 				"command": "jtl-syllabus.hideFiles",
-				"title": "Hide System Files",
+				"title": "Hide Dot and Special Files",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.unhideFiles",
-				"title": "Show Hidden System Files",
+				"title": "Show Hidden Files",
 				"category": "League"
 			}
 		],
@@ -185,11 +185,6 @@
 					"type": "boolean",
 					"default": false,
 					"description": "If true, skips UI reconfiguration for development purposes. Synonym is env var JTL_SYLLABUS_DEV"
-				},
-				"jtl.lesson_browser.virtual_display.default_url": {
-					"type": "string",
-					"default": "https://jointheleague.org/",
-					"description": "Default URL to use for virtual display when JTL_VNC_URL isn't set and not running in a codespace"
 				},
 				"jtl.lesson_browser.telemetry.report_interval": {
 					"type": "number",

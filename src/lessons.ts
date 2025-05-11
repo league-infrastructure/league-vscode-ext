@@ -1,20 +1,12 @@
 import * as vscode from 'vscode';
-import { activateVirtDisplay } from './virtdisplay';
-import { activateKeyRate } from './keystrokes';
-import * as yaml from 'js-yaml';
 import * as fs from 'fs';
-import * as path from 'path';
+
 
 import { SyllabusProvider } from './SyllabusProvider';
-import { SylFs, Syllabus } from './models';
+import { SylFs  } from './models';
 import { hideFiles, unhideFiles } from './workspace-settings';
 
-class NoSyllabusError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'NoSyllabusError';
-    }
-}
+
 
 /**
  * Simplifies the UI for students by moving the activity bar to the bottom,
@@ -72,38 +64,40 @@ function createTreeDP(context: vscode.ExtensionContext): SyllabusProvider {
     return lessonProvider;
 }
 export function activateLessonBrowser(context: vscode.ExtensionContext): Thenable<SyllabusProvider> {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let lessonProvider: SyllabusProvider = createTreeDP(context);
+    return new Promise((resolve, reject) => {
+        (async () => {
+            try {
+                const lessonProvider: SyllabusProvider = createTreeDP(context);
 
-            const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
-            const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
-            context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
+                const config = vscode.workspace.getConfiguration('jtl.lesson_browser');
+                const isDevMode = config.get<boolean>('dev', false) || (process.env.JTL_SYLLABUS_DEV && process.env.JTL_SYLLABUS_DEV !== '');
+                context.globalState.update('jtl.syllabus.isDevMode', isDevMode);
 
 
-            if (!isDevMode) {
-                /**
-                 * Reconfigure the views and settings to make the lesson browser simpler for students. 
-                 */
-                await simplifyUI();
-                
-                // Hide system files and other files that would distract students
-                await hideFiles();
+                if (!isDevMode) {
+                    /**
+                     * Reconfigure the views and settings to make the lesson browser simpler for students. 
+                     */
+                    await simplifyUI();
+                    
+                    // Hide system files and other files that would distract students
+                    await hideFiles();
 
-                // Restore default UI settings when the extension is deactivated
-                context.subscriptions.push({
-                    dispose: () => {
-                        defaultUI();
-                        unhideFiles();
-                    }
-                });
+                    // Restore default UI settings when the extension is deactivated
+                    context.subscriptions.push({
+                        dispose: () => {
+                            defaultUI();
+                            unhideFiles();
+                        }
+                    });
+                }
+
+                console.log('Lesson browser activated');
+                resolve(lessonProvider);
+            } catch (error) {
+                reject(error);
             }
-
-            console.log('Lesson browser activated');
-            resolve(lessonProvider);
-        } catch (error) {
-            reject(error);
-        }
+        })();
     });
 }
 
