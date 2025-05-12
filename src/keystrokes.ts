@@ -6,7 +6,7 @@ import { URL } from 'url';
 import * as crypto from 'crypto';
 import { SyllabusProvider } from './SyllabusProvider';
 import { NumberQueue } from './FixedQueue';
-import { report } from 'process';
+
 
 function generateId(): string {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -41,10 +41,12 @@ interface KeystrokeData {
     completions: string[]; // Lesson Completions
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function hashKeystrokeData(data: KeystrokeData): string {
     const hash = crypto.createHash('sha256');
 
     // Exclude the timestamp property from the hash calculation
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { timestamp, average5m, ...dataWithoutTimestamp } = data;
 
     // Convert the object to a JSON string and update the hash
@@ -56,8 +58,8 @@ function hashKeystrokeData(data: KeystrokeData): string {
 
 export class KeystrokeMonitor {
     private readonly instanceId: string;
-    private totalKeystrokes: number = 0;
-    private fileKeystrokes: Map<string, FileKeystrokeStats> = new Map();
+    private totalKeystrokes = 0;
+    private fileKeystrokes: Map<string, FileKeystrokeStats> = new Map<string, FileKeystrokeStats>();
     private interval: NodeJS.Timeout | undefined;
     private rateQueue: NumberQueue;
     private readonly reportDir: string;
@@ -152,7 +154,7 @@ export class KeystrokeMonitor {
         
 
             return memoryUsage;
-        } catch (error) {
+        } catch {
             if (this.debug) {
                 console.error('Failed to read memory usage');
             }
@@ -170,9 +172,7 @@ export class KeystrokeMonitor {
 
 
     private async makeKeyStrokeData(): Promise<KeystrokeData> {
-
-        const currentKPS = this.totalKeystrokes / this.reportInterval;
-        
+  
         // Convert Map to plain object for JSON serialization
         const fileStats: Record<string, FileKeystrokeStats> = {};
         this.fileKeystrokes.forEach((stats, path) => {
@@ -310,7 +310,6 @@ export class KeystrokeMonitor {
             return;
         }
 
-        let ts = new Date().toISOString().split('.')[0] + 'Z';
 
         const ksfile = `${this.reportDir}/keystrokes.json}`;
 

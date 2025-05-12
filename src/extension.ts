@@ -4,7 +4,7 @@ import { activateKeyRate } from './keystrokes';
 import { activateLessonBrowser, deactivateLessonBrowser, simplifyUI, defaultUI } from './lessons';
 import { activateJupyterDefault } from './jupykernel';
 import { activateActions } from './actions';
-import { SyllabusProvider } from './SyllabusProvider';
+
 import { hideFiles, unhideFiles } from './workspace-settings';
 
 export async function activate(context: vscode.ExtensionContext) {
