@@ -41,7 +41,7 @@ function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
         throw vscode.FileSystemError.FileNotFound(`Course directory not found at path: ${coursePath}`);
     }
 
-    const storageDir = path.join(syllabusPath, 'store');
+    const storageDir = path.join(path.dirname(syllabusPath), 'store');
 
     if (!fs.existsSync(storageDir)) {
         fs.mkdirSync(storageDir, { recursive: true });
