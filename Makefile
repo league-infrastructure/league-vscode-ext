@@ -10,7 +10,8 @@ ver:
 
 build:
 	npm run compile
-	vsce package
+	# vsce package # If installed globally, you can use this command directly
+	npx @vscode/vsce package # Use npx to ensure the local version is used
 
 push: build
 	git commit --allow-empty -a -m "Release version $(VERSION)"
