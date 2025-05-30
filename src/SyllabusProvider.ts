@@ -22,9 +22,10 @@ enum Where {
     Local = 'local' // Running locally
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
 
-    let syllabusPath = syllabus.filePath;
+    const syllabusPath = syllabus.filePath;
 
     if (!syllabusPath) {
         throw new Error('Syllabus file path not set');
@@ -40,7 +41,7 @@ function setupFs(syllabus: Syllabus, context: vscode.ExtensionContext): SylFs {
         throw vscode.FileSystemError.FileNotFound(`Course directory not found at path: ${coursePath}`);
     }
 
-    const storageDir = path.join(coursePath, 'store');
+    const storageDir = path.join(syllabusPath, 'store');
 
     if (!fs.existsSync(storageDir)) {
         fs.mkdirSync(storageDir, { recursive: true });
@@ -85,9 +86,9 @@ function findSyllabus(): string | false {
 
 
     if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
-        let workspace = vscode.workspace.workspaceFolders[0];
+        const workspace = vscode.workspace.workspaceFolders[0];
 
-        let defaultPath = path.join(workspace.uri.fsPath, 'lessons/.jtl/syllabus.yaml');
+        const defaultPath = path.join(workspace.uri.fsPath, 'lessons/.jtl/syllabus.yaml');
 
         if (fs.existsSync(defaultPath)) {
             console.log('JTL Syllabus Default:', defaultPath);
@@ -150,12 +151,12 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     private root: RootItem;
 
-    private firstExpanded: boolean = false;
+    private firstExpanded = false;
 
-    public itemMap: Map<number, SyllabusItem> = new Map();
-    public uidMap: Map<string, SyllabusItem> = new Map();
+    public itemMap: Map<number, SyllabusItem> = new Map<number, SyllabusItem>();
+    public uidMap: Map<string, SyllabusItem> = new Map<string, SyllabusItem>();
 
-    private nextNodeId: number = 0;
+    private nextNodeId = 0;
     private activeLessonItem: LessonItem | null = null;
 
     // sylFS gets setup in updateSyllabus
@@ -190,12 +191,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         
     }
 
-    public register(context: vscode.ExtensionContext): any {
+    public register(context: vscode.ExtensionContext): void {
 
-        let viewId = 'lessonBrowserView'; // must match the id in package.json
+        const viewId = 'lessonBrowserView'; // must match the id in package.json
 
-        const treeDataProvider = vscode.window.registerTreeDataProvider(viewId, this);
-        
+        //const treeDataProvider = vscode.window.registerTreeDataProvider(viewId, this);
         //context.subscriptions.push(treeDataProvider);
 
         this._viewer = vscode.window.createTreeView(viewId, {
@@ -281,7 +281,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     
         console.log('Loading syllabus from:', syllabusPath);
     
-        let syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as Syllabus;
+        const syllabus = yaml.load(fs.readFileSync(syllabusPath, 'utf8')) as Syllabus;
    
         // Check if the syllabus is in the correct format
         if (!syllabus.modules || !Array.isArray(syllabus.modules) || syllabus.modules.length === 0 || !syllabus.modules[0].lessons || !syllabus.modules[0].lessons[0].name) {
@@ -312,7 +312,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         this.readCompletion();
         this._onDidChangeTreeData.fire();
         console.log('Syllabus updated');
-        return this.root
+        return this.root;
     }
 
     /**
@@ -398,7 +398,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
 
     writeCompletion(): void {
 
-        let completedLessons: string[] = [];
+        const completedLessons: string[] = [];
 
         this.uidMap.forEach((item, id) => {
             
@@ -435,7 +435,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         if (lesson === null) {
             nodeId = -1;
         } else if (typeof lesson === 'number') {
-            nodeId = lesson
+            nodeId = lesson;
         } else {
             nodeId = lesson.nodeId || 0;
         }
@@ -452,7 +452,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
     }
 
     clearCompletion(): void {
-        this.itemMap.forEach((item, id) => {
+        this.itemMap.forEach((item, _) => {
             if (item instanceof LessonItem) {
                 item.setCompletionStatus(false);
             }
@@ -475,7 +475,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             return;
         }
 
-        const newStatus = !arg.getCompletionStatus();
+    
         this.setCompletion(arg, !arg.getCompletionStatus());
     }
 
@@ -483,7 +483,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
      * Sets the completion status of a lesson to true
      * and advances to the next incomplete lesson
      */
-    setCompletion(arg?: LessonItem | vscode.Uri | null, status: boolean = true): void {
+    setCompletion(arg?: LessonItem | vscode.Uri | null, status = true): void {
         let targetLesson: LessonItem | null = null;
         
         // Handle different argument types
@@ -538,11 +538,11 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             return;
         }
 
-        let lesson = lessonItem.lesson;
+        const lesson = lessonItem.lesson;
         this._viewer?.reveal(lessonItem, { select: true, focus: true });
 
 
-        let ld: LessonDisplay = new LessonDisplay(this, lesson);
+        const ld: LessonDisplay = new LessonDisplay(this, lesson);
 
         await ld.closeAllTabs();
         ld.openTabs();
@@ -566,8 +566,8 @@ export abstract class SyllabusItem extends vscode.TreeItem {
 
 
     public children: SyllabusItem[] = [];
-    public completed: boolean = false;
-    public spath: string = '';
+    public completed = false;
+    public spath = '';
     public nodeId: number|null = null;
 
     constructor(
@@ -580,6 +580,7 @@ export abstract class SyllabusItem extends vscode.TreeItem {
         
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getChildren(element?: SyllabusItem): Thenable<SyllabusItem[]>{
         return Promise.resolve(this.children);
     }
@@ -628,7 +629,7 @@ export class RootItem extends SyllabusItem {
 
 export class ModuleItem extends SyllabusItem {
 
-    constructor(public provider: SyllabusProvider, public readonly module: Module, public readonly index: number = 0) {
+    constructor(public provider: SyllabusProvider, public readonly module: Module, public readonly index = 0) {
         super(module, null);
         this.contextValue = 'module';
         this.spath = "m"+index.toString();
@@ -661,7 +662,7 @@ export class ModuleItem extends SyllabusItem {
 
 export class LessonSetItem extends SyllabusItem {
 
-    constructor(public provider: SyllabusProvider, public parent: ModuleItem | LessonItem, public lesson: Lesson, public index: number = 0) {
+    constructor(public provider: SyllabusProvider, public parent: ModuleItem | LessonItem, public lesson: Lesson, public index = 0) {
         super(lesson, parent, vscode.TreeItemCollapsibleState.Collapsed);
         this.contextValue = 'lessonSet';
 
@@ -689,7 +690,7 @@ export class LessonSetItem extends SyllabusItem {
 
 export class LessonItem extends SyllabusItem {
 
-    constructor(public provider: SyllabusProvider, public parent: ModuleItem | LessonItem, public lesson: Lesson, public index: number = 0) {
+    constructor(public provider: SyllabusProvider, public parent: ModuleItem | LessonItem, public lesson: Lesson, public index = 0) {
         
 
         super(lesson, parent, vscode.TreeItemCollapsibleState.None);
