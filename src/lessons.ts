@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 import { SyllabusProvider } from './SyllabusProvider';
 import { SylFs  } from './models';
-import { hideFiles, unhideFiles } from './workspace-settings';
+import { hideFiles, unhideFiles } from './workspaceSettings';
 
 
 

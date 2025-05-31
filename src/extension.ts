@@ -5,7 +5,7 @@ import { activateLessonBrowser, deactivateLessonBrowser, simplifyUI, defaultUI }
 import { activateJupyterDefault } from './jupykernel';
 import { activateActions } from './actions';
 
-import { hideFiles, unhideFiles } from './workspace-settings';
+import { hideFiles, unhideFiles } from './workspaceSettings';
 
 export async function activate(context: vscode.ExtensionContext) {
     // Register UI commands

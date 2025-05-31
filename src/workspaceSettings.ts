@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DEFAULT_FILE_EXCLUSIONS } from './file-exclusions';
+import { DEFAULT_FILE_EXCLUSIONS } from './fileExclusions';
 
 /**
  * Hides files according to the DEFAULT_FILE_EXCLUSIONS configuration.
