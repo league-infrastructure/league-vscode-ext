@@ -10,6 +10,9 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
+# Exclude all SVG files
+**/*.svg
+
 .DS_Store
 Thumbs.db
 keystrokes/
