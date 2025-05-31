@@ -9,8 +9,9 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
-
+ 
 # Exclude all SVG files
+**/svg
 **/*.svg
 
 .DS_Store

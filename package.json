@@ -27,7 +27,7 @@
 				{
 					"id": "lessonBrowser",
 					"title": "Lesson Browser",
-					"icon": "./media/png/flag-light.png"
+					"icon": "./media/png/flaglight.png"
 				}
 			]
 		},
@@ -52,8 +52,8 @@
 				"title": "Open Virtual Display",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitor-icon-light.png",
-					"dark": "./media/png/monitor-icon-dark.png"
+					"light": "./media/png/monitoriconlight.png",
+					"dark": "./media/png/monitoricondark.png"
 				}
 			},
 			{
@@ -61,8 +61,8 @@
 				"title": "Open Virtual Display on Right",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitor-icon-light.png",
-					"dark": "./media/png/monitor-icon-dark.png"
+					"light": "./media/png/monitoriconlight.png",
+					"dark": "./media/png/monitoricondark.png"
 				}
 			},
 			{
@@ -75,8 +75,8 @@
 				"title": "Toggle Virtual Display",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitor-icon-light.png",
-					"dark": "./media/png/monitor-icon-dark.png"
+					"light": "./media/png/monitoriconlight.png",
+					"dark": "./media/png/monitoricondark.png"
 				}
 			},
 			{
@@ -88,16 +88,16 @@
 				"command": "lessonBrowser.toggleCompletion",
 				"title": "Toggle Lesson Completion",
 				"icon": {
-					"light": "./media/png/check-on-light.png",
-					"dark": "./media/png/check-on-dark.png"
+					"light": "./media/png/checkonlight.png",
+					"dark": "./media/png/checkondark.png"
 				}
 			},
 			{
 				"command": "lessonBrowser.setCompletion",
 				"title": "Mark Lesson Completed",
 				"icon": {
-					"light": "./media/png/check-on-light.png",
-					"dark": "./media/png/check-on-dark.png"
+					"light": "./media/png/checkonlight.png",
+					"dark": "./media/png/checkondark.png"
 				}
 			},
 			{
@@ -110,8 +110,8 @@
 				"title": "Redirect to Page",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/bolt_light.png",
-					"dark": "./media/png/bolt_dark.png"
+					"light": "./media/png/boltlight.png",
+					"dark": "./media/png/boltdark.png"
 				}
 			},
 			{
