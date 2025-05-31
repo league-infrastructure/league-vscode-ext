@@ -2,7 +2,7 @@
 	"name": "jtl-syllabus",
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
-	"icon": "media/png/flag.png",
+	"icon": "./media/png/flag.png",
 	"version": "1.20250530.3",
 	"publisher": "jointheleague",
 	"private": true,
