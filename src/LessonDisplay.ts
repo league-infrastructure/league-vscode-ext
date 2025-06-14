@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import { SyllabusProvider, resolvePath } from './SyllabusProvider';
 import * as path from 'path';
-import { SylFs } from './models';
-import { Syllabus, Lesson, Module } from './models';
+
+import { Lesson } from './models';
 import * as fs from 'fs';
 
-import { virtualDisplayTab } from './virtdisplay';
+
 
 export class LessonDisplay {
 	lessonTab?: vscode.Tab; 	// Either a Markdown or a Notebook tab
@@ -18,8 +18,8 @@ export class LessonDisplay {
 	displayEditor?: vscode.WebviewPanel;
 	terminal?: vscode.Terminal;
 
-	private nTabs: number = 0;
-	private tabSpec: string = '';
+	private nTabs = 0;
+	private tabSpec = '';
 
 	constructor(private provider: SyllabusProvider, private lesson: Lesson) {
 		this.countExpectedTabs();
@@ -31,7 +31,7 @@ export class LessonDisplay {
 	 */
 	private countExpectedTabs(): number {
 
-		let expectedTabs = 0;
+		const expectedTabs = 0;
 
 
 		if (this.lesson.lesson) {
@@ -174,7 +174,7 @@ export class LessonDisplay {
 
 		if (this.tabSpec.includes('LED')) {
 
-			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoRows')
+			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoRows');
 
 			this.exerciseEditor = await this.openExerciseTab();
 
@@ -186,7 +186,7 @@ export class LessonDisplay {
 
 		} else if (this.tabSpec.includes('lED')) {
 
-			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoColumns')
+			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoColumns');
 
 			this.exerciseEditor = await this.openExerciseTab();
 
@@ -221,7 +221,7 @@ export class LessonDisplay {
 	}
 
 
-	public async waitforTabs(expectedTabs: number = 0): Promise<void> {
+	public async waitforTabs(expectedTabs = 0): Promise<void> {
 		// Wait for all of the tabs we expect to be opened and recorded. For
 		// one tab, this is almost instant, but for multiple tabs, it can take
 		// 250ms
@@ -245,7 +245,7 @@ export class LessonDisplay {
 
 		// Now we can visit the tabs and categorize them. 
 
-		vscode.window.tabGroups.all[0].tabs.forEach((tab, tabIndex) => {
+		vscode.window.tabGroups.all[0].tabs.forEach((tab, _tabIndex) => {
 			// console.log(`  Tab ${tabIndex}: ${tab.label}`);
 			if (tab.input instanceof vscode.TabInputText) {
 				//console.log(`    URI (T): ${tab.input.uri.toString()}`);
@@ -279,7 +279,7 @@ export class LessonDisplay {
 	 * 
 	 */
 	public areTabsOpen(tabString: string): boolean {
-		const tabs: { [key: string]: vscode.Tab | undefined } = {
+		const tabs: Record<string, vscode.Tab | undefined> = {
 			"L": this.lessonTab,
 			"l": this.lessonTab,
 			"E": this.exerciseTab,
@@ -298,12 +298,12 @@ export class LessonDisplay {
 			}
 		};
 
-		let r: boolean[] = tabString.split('').map(char => match(char));
-		let allTrue: boolean = r.every(value => value === true);
+		const r: boolean[] = tabString.split('').map(char => match(char));
+		const allTrue: boolean = r.every(value => value === true);
 
 		//console.log(`areTabsOpen ${tabString}: ${allTrue} (${r})`);
 
-		return allTrue
+		return allTrue;
 
 	}
 

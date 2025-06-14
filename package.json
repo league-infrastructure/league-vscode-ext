@@ -116,22 +116,22 @@
 			},
 			{
 				"command": "jtl-syllabus.simplifyUI",
-				"title": "Simplify UI for Students",
+				"title": "UI: Simplify UI for Students",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.defaultUI",
-				"title": "Restore Default UI Settings",
+				"title": "UI: Restore Default UI Settings",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.hideFiles",
-				"title": "Hide Dot and Special Files",
+				"title": "Files: Hide Dot and Special Files",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.unhideFiles",
-				"title": "Show Hidden Files",
+				"title": "Files: Show Hidden Files",
 				"category": "League"
 			}
 		],

@@ -51,8 +51,11 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 }
 
-export function deactivate() {
+export async function deactivate() {
     // Cleanup will be handled automatically through the disposables
     deactivateLessonBrowser();
+    
+    // Restore the default UI when the extension is deactivated
+    await defaultUI();
 }
 

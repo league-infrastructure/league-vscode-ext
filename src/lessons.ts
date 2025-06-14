@@ -7,7 +7,6 @@ import { SylFs  } from './models';
 import { hideFiles, unhideFiles } from './workspaceSettings';
 
 
-
 /**
  * Simplifies the UI for students by moving the activity bar to the bottom,
  * disabling the minimap, and focusing on the lesson browser.
@@ -29,9 +28,8 @@ export async function defaultUI() {
     // Move activity bar back to default position
     await vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
     
-    // VS Code doesn't have a direct configuration for activityBar.visible,
-    // so we need to use the command to show the activity bar if it's hidden
-    await vscode.commands.executeCommand('workbench.action.toggleActivityBarVisibility', true);
+    // Ensure the activity bar is visible (not hidden)
+    await vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
 }
 
 function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, context: vscode.ExtensionContext): void {
