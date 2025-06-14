@@ -55,7 +55,7 @@ The extension provides the following commands:
 | League: Redirect to Page |      |
 | League: UI: Simplify UI for Students |      |
 | League: UI: Restore Default UI Settings |      |
-| League: UI: Toggle Between Simple and Default UI, and Toggle File Visibility | `Ctrl+Alt+U` (Windows/Linux), `Cmd+Alt+U` (Mac) |
+| League: UI: Toggle Between Simple and Default UI, and Toggle File Visibility | `Ctrl+Alt+J` (Windows/Linux), `Ctrl+Alt+J` (Mac) |
 | League: Files: Hide Dot and Special Files |      |
 | League: Files: Show Hidden Files |      |
 

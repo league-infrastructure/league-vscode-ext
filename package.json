@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "./media/png/flag.png",
-	"version": "1.20250614.4",
+	"version": "1.20250614.5",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -211,8 +211,8 @@
 		"keybindings": [
 			{
 				"command": "jtl-syllabus.toggleUI",
-				"key": "ctrl+alt+u",
-				"mac": "cmd+alt+u",
+				"key": "ctrl+alt+j",
+				"mac": "ctrl+alt+j",
 				"when": "editorTextFocus || !editorFocus"
 			}
 		]
