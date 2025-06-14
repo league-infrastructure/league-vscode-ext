@@ -311,7 +311,7 @@ export class KeystrokeMonitor {
         }
 
 
-        const ksfile = `${this.reportDir}/keystrokes.json}`;
+        const ksfile = `${this.reportDir}/keystrokes.json`;
 
         // Write the data to the file
         await vscode.workspace.fs.writeFile(vscode.Uri.file(ksfile), Buffer.from(JSON.stringify(data, null, 2)));
