@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { activateVirtDisplay } from './virtdisplay';
 import { activateKeyRate } from './keystrokes';
-import { activateLessonBrowser, deactivateLessonBrowser, simplifyUI, defaultUI } from './lessons';
+import { activateLessonBrowser, deactivateLessonBrowser, simplifyUI, defaultUI, toggleUI } from './lessons';
 import { activateJupyterDefault } from './jupykernel';
 import { activateActions } from './actions';
 
@@ -12,6 +12,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('jtl-syllabus.simplifyUI', simplifyUI),
         vscode.commands.registerCommand('jtl-syllabus.defaultUI', defaultUI),
+        vscode.commands.registerCommand('jtl-syllabus.toggleUI', toggleUI),
         vscode.commands.registerCommand('jtl-syllabus.hideFiles', hideFiles),
         vscode.commands.registerCommand('jtl-syllabus.unhideFiles', unhideFiles)
     );

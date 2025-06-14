@@ -6,6 +6,10 @@ import { SyllabusProvider } from './SyllabusProvider';
 import { SylFs  } from './models';
 import { hideFiles, unhideFiles } from './workspaceSettings';
 
+// State variable to track UI mode
+let isSimplifiedUI = false;
+
+
 
 /**
  * Simplifies the UI for students by moving the activity bar to the bottom,
@@ -15,6 +19,9 @@ export async function simplifyUI() {
     await vscode.commands.executeCommand('workbench.view.extension.lessonBrowser');
     await vscode.commands.executeCommand('workbench.action.activityBarLocation.bottom');
     await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, true);
+    
+    // Set the UI state to simplified
+    isSimplifiedUI = true;
 }
 
 /**
@@ -28,8 +35,17 @@ export async function defaultUI() {
     // Move activity bar back to default position
     await vscode.commands.executeCommand('workbench.action.activityBarLocation.default');
     
-    // Ensure the activity bar is visible (not hidden)
-    await vscode.workspace.getConfiguration('workbench').update('activityBar.visible', true, true);
+    // Show the activity bar if it's hidden
+    // We need to check if it's currently visible first to avoid toggling it off
+    const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+    const activityBarVisible = workbenchConfig.get('activityBar.visible');
+    
+    if (activityBarVisible === false) {
+        await vscode.commands.executeCommand('workbench.action.toggleActivityBarVisibility');
+    }
+    
+    // Set the UI state to default
+    isSimplifiedUI = false;
 }
 
 function setupFileWatcher(sylFs: SylFs, lessonProvider: SyllabusProvider, context: vscode.ExtensionContext): void {
@@ -99,6 +115,27 @@ export function activateLessonBrowser(context: vscode.ExtensionContext): Thenabl
     });
 }
 
+
+/**
+ * Toggles between simplified UI for students and default UI settings.
+ * This provides a convenient way to switch between the two UI modes.
+ * Also toggles file visibility.
+ */
+export async function toggleUI() {
+    // Use the state variable to determine which UI mode to switch to
+    if (isSimplifiedUI) {
+        await defaultUI();
+        await unhideFiles();
+     
+
+    } else {
+        await simplifyUI();
+        await hideFiles();
+
+    }
+    
+
+}
 
 export function deactivateLessonBrowser() {
     console.log('Lesson browser deactivated');

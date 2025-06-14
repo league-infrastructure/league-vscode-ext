@@ -17,6 +17,9 @@ export async function hideFiles(): Promise<void> {
     await filesConfig.update('exclude', updatedExclusions, vscode.ConfigurationTarget.Workspace);
     
     vscode.window.showInformationMessage('Files have been hidden from the file explorer');
+    
+    // Return true to indicate files are now hidden
+    return Promise.resolve();
 }
 
 /**

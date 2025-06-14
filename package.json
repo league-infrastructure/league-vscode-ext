@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "./media/png/flag.png",
-	"version": "1.20250530.3",
+	"version": "1.20250614.3",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -125,6 +125,11 @@
 				"category": "League"
 			},
 			{
+				"command": "jtl-syllabus.toggleUI",
+				"title": "UI: Toggle Between Simple and Default UI, and Toggle File Visibility",
+				"category": "League"
+			},
+			{
 				"command": "jtl-syllabus.hideFiles",
 				"title": "Files: Hide Dot and Special Files",
 				"category": "League"
@@ -202,7 +207,15 @@
 					"description": "Enable debug mode for keystroke monitoring. Overrides KST_DEBUG."
 				}
 			}
-		}
+		},
+		"keybindings": [
+			{
+				"command": "jtl-syllabus.toggleUI",
+				"key": "ctrl+alt+u",
+				"mac": "cmd+alt+u",
+				"when": "editorTextFocus || !editorFocus"
+			}
+		]
 	},
 	"scripts": {
 		"compile": "tsc -p ./",

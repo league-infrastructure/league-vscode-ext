@@ -38,6 +38,35 @@ re-configuring the UI and automatically opening the first lesson.
 The Syllabus file can be set with the `jtl.syllabus.path` setting, or the
 `JTL_SYLLABUS` environment variable.
 
+## Available Commands
+
+The extension provides the following commands:
+
+| Command Name | Keybinding (if set) |
+|--------------|---------------------|
+| League: Open Virtual Display |      |
+| League: Open Virtual Display on Right |      |
+| League: Close Virtual Display |      |
+| League: Toggle Virtual Display |      |
+| League: Open Lesson |      |
+| League: Toggle Lesson Completion |      |
+| League: Mark Lesson Completed |      |
+| League: Clear Lesson Completion |      |
+| League: Redirect to Page |      |
+| League: UI: Simplify UI for Students |      |
+| League: UI: Restore Default UI Settings |      |
+| League: UI: Toggle Between Simple and Default UI, and Toggle File Visibility | `Ctrl+Alt+U` (Windows/Linux), `Cmd+Alt+U` (Mac) |
+| League: Files: Hide Dot and Special Files |      |
+| League: Files: Show Hidden Files |      |
+
+## For Developers and Instructors
+
+### Restore the UI
+
+This extension will simplify the UI for students, but this simplification can
+complicate normal development. You can turn it on and off with the "League: UI:
+*" commands. You can also toggle hiding files with "League: Files:"
+
 
 ## License
 
