@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "./media/png/flag.png",
-	"version": "1.20250614.5",
+	"version": "1.20250614.6",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -52,8 +52,8 @@
 				"title": "Open Virtual Display",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitoriconlight.png",
-					"dark": "./media/png/monitoricondark.png"
+					"light": "./media/png/monitor-light.png",
+					"dark": "./media/png/monitor-dark.png"
 				}
 			},
 			{
@@ -61,8 +61,8 @@
 				"title": "Open Virtual Display on Right",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitoriconlight.png",
-					"dark": "./media/png/monitoricondark.png"
+					"light": "./media/png/monitor-light.png",
+					"dark": "./media/png/monitor-dark.png"
 				}
 			},
 			{
@@ -75,8 +75,8 @@
 				"title": "Toggle Virtual Display",
 				"category": "League",
 				"icon": {
-					"light": "./media/png/monitoriconlight.png",
-					"dark": "./media/png/monitoricondark.png"
+					"light": "./media/png/monitor-light.png",
+					"dark": "./media/png/monitor-dark.png"
 				}
 			},
 			{

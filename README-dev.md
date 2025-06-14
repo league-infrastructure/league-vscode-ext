@@ -74,5 +74,3 @@ For directories:
 * if there is one .py file, it is displayed in the editor. If there are multiple .py files ..... tbd ... 
 * If ther eis one `.md` file, it is displayed in the markdown previewer in the lower pane. 
   
-
-When the user starts a lesson
