@@ -3,6 +3,25 @@ description: A first course in Python
 module_dir: ..
 uid: dd84e7e3-e3ec-4d1e-b58a-e2f5fa238533
 modules:
+- name: Introducing Tina
+  uid: NtvhO8WR
+  lessons:
+  - name: Meet Tina
+    uid: tvO1dlwm
+    lesson: 10_Introducing_Tina/10_Meet_Tina/README.md
+    exercise: 10_Introducing_Tina/10_Meet_Tina/Meet_Tina.py
+    display: true
+  - name: What Can Tina Do
+    uid: 7tUP3zAZ
+    exercise: 10_Introducing_Tina/20_What_Can_Tina_Do.ipynb
+  - name: Squares and Circles
+    uid: E7KlecQ3
+    lesson: 10_Introducing_Tina/30_Squares_and_Circles/README.md
+    exercise: 10_Introducing_Tina/30_Squares_and_Circles/Squares_and_Circles.py
+    display: true
+  - name: Check In Your Code
+    uid: doD6P7fk
+    exercise: 10_Introducing_Tina/40_Check_In_Your_Code.ipynb
 - name: Loops
   description: All about Loops
   uid: xc25qchb
@@ -10,27 +29,27 @@ modules:
   - name: Iteration
     description: Loops and Iteration, For the Win, from the notebook metadata
     uid: hqALCHmg
-    exercise: 100_Loops/100_Iteration.ipynb
+    exercise: 20_Loops/10_Iteration.ipynb
     terminal: true
   - name: Crazy Tina
     uid: 4ZVYYbcp
-    lesson: 100_Loops/200_Crazy_Tina/README.md
-    exercise: 100_Loops/200_Crazy_Tina/Crazy_Tina.py
+    lesson: 20_Loops/20_Crazy_Tina/README.md
+    exercise: 20_Loops/20_Crazy_Tina/Crazy_Tina.py
     display: true
   - name: List Story
     uid: iZmbjVCO
-    lesson: 100_Loops/300_List_Story/README.md
-    exercise: 100_Loops/300_List_Story/List_Story.py
+    lesson: 20_Loops/30_List_Story/README.md
+    exercise: 20_Loops/30_List_Story/List_Story.py
   - name: Strings
     uid: f6en9y0P
-    exercise: 100_Loops/400_Strings.ipynb
+    exercise: 20_Loops/40_Strings.ipynb
   - name: Fizz Buzz Badgers
     uid: 7lIH9YoR
-    lesson: 100_Loops/500_Fizz_Buzz_Badgers/README.md
-    exercise: 100_Loops/500_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.py
+    lesson: 20_Loops/50_Fizz_Buzz_Badgers/README.md
+    exercise: 20_Loops/50_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.py
   - name: For Loop Gauntlet
     uid: 4eAFIeLZ
-    exercise: 100_Loops/600_For_Loop_Gauntlet.ipynb
+    exercise: 20_Loops/60_For_Loop_Gauntlet.ipynb
 - name: Turtles
   description: All about those crafty turtles
   uid: 3GQ1PlC5
@@ -40,40 +59,40 @@ modules:
     lessons:
     - name: Get Started
       uid: UCL9clDP
-      exercise: 200_Turtles/100_First/100_Get_Started.ipynb
+      exercise: 30_Turtles/10_First/10_Get_Started.ipynb
     - name: Meet Tina
       description: the best of tina
       uid: ek3ZTCSs
-      lesson: 200_Turtles/100_First/200_Meet_Tina/README.md
-      exercise: 200_Turtles/100_First/200_Meet_Tina/Meet_Tina.py
+      lesson: 30_Turtles/10_First/20_Meet_Tina/README.md
+      exercise: 30_Turtles/10_First/20_Meet_Tina/Meet_Tina.py
       display: true
   - name: Second
     uid: iyuJ2gpB
     lessons:
     - name: Check In Your Code
       uid: UmqEy98A
-      exercise: 200_Turtles/200_Second/100_Check_In_Your_Code.ipynb
+      exercise: 30_Turtles/20_Second/10_Check_In_Your_Code.ipynb
     - name: Turtle Tricks
-      exercise: 200_Turtles/200_Second/200_Turtle_Tricks.py
+      exercise: 30_Turtles/20_Second/20_Turtle_Tricks.py
       display: true
     - name: Variables and Functions
       uid: I17za4hN
-      exercise: 200_Turtles/200_Second/300_Variables_and_Functions.ipynb
+      exercise: 30_Turtles/20_Second/30_Variables_and_Functions.ipynb
     - name: Variables and Functions
       uid: a50BejGr
-      exercise: 200_Turtles/200_Second/400_Variables_and_Functions.ipynb
+      exercise: 30_Turtles/20_Second/40_Variables_and_Functions.ipynb
     - name: Efficient Turtle
-      exercise: 200_Turtles/200_Second/500_Efficient_Turtle.py
+      exercise: 30_Turtles/20_Second/50_Efficient_Turtle.py
       display: true
   - name: Third
     uid: 6x7pjYvk
     lessons:
     - name: More Turtle Programs
       uid: Y3UsEFVv
-      exercise: 200_Turtles/300_Third/100_More_Turtle_Programs.ipynb
+      exercise: 30_Turtles/30_Third/10_More_Turtle_Programs.ipynb
     - name: More Turtle programs
-      exercise: 200_Turtles/300_Third/200_More_Turtle_programs.py
+      exercise: 30_Turtles/30_Third/20_More_Turtle_programs.py
     - name: More Turtle Programs
-      exercise: 200_Turtles/300_Third/300_More_Turtle_Programs.py
+      exercise: 30_Turtles/30_Third/30_More_Turtle_Programs.py
     - name: More Turtle Programs
-      exercise: 200_Turtles/300_Third/400_More_Turtle_Programs.py
+      exercise: 30_Turtles/30_Third/40_More_Turtle_Programs.py

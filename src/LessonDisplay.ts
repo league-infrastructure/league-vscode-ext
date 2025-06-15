@@ -173,7 +173,7 @@ export class LessonDisplay {
 
 		if (this.tabSpec.includes('LED')) {
 
-			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoRows');
+			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoColumns');
 
 			this.exerciseEditor = await this.openExerciseTab();
 
