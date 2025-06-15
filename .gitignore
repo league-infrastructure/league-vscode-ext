@@ -12,5 +12,6 @@ tsconfig.lsif.json
 .venv
 *.vsix
 keystrokes/*
+keystrokes.json
 
 .env
