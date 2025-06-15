@@ -173,15 +173,17 @@ export class LessonDisplay {
 
 		if (this.tabSpec.includes('LED')) {
 
-			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoColumns');
+			await vscode.commands.executeCommand('workbench.action.editorLayoutTwoRows');
 
 			this.exerciseEditor = await this.openExerciseTab();
 
+			await this.openDisplayTab();
+			//await vscode.commands.executeCommand('workbench.action.moveEditorToLastGroup');
+
 			this.lessonEditor = await this.openLessonTab();
 			await vscode.commands.executeCommand('workbench.action.moveEditorToLastGroup');
+			
 
-			await this.openDisplayTab();
-			await vscode.commands.executeCommand('workbench.action.moveEditorToLastGroup');
 
 		} else if (this.tabSpec.includes('lED')) {
 
