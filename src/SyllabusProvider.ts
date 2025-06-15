@@ -509,17 +509,18 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             targetLesson.setCompletionStatus(status);
             this.writeCompletion();
             this.refresh();
+        }
 
-            // Get the next lesson and open it if it exists
-            if (status) {
-                const nextLessonItem = this.nextIncompleteLesson(targetLesson);
-                if (nextLessonItem && nextLessonItem instanceof LessonItem) {
-                    this.openLesson(nextLessonItem);
-                } else {
-                    console.log(`No next lesson after ${targetLesson.nodeId}`);
-                }
+        // Get the next lesson and open it if it exists
+        if (status) {
+            const nextLessonItem = this.nextIncompleteLesson(targetLesson);
+            if (nextLessonItem && nextLessonItem instanceof LessonItem) {
+                this.openLesson(nextLessonItem);
+            } else {
+                console.log(`No next lesson after ${targetLesson.nodeId}`);
             }
         }
+    
     }
 
 

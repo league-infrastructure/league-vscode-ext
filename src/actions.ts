@@ -14,7 +14,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
 
     resolveWebviewView(
         webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
+        _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken
     ) {
         this._view = webviewView;
@@ -63,7 +63,9 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
      * Checks if there's any Python file open and updates the Webview
      */
     private checkPythonFile() {
-        if (!this._view) return;
+        if (!this._view){
+             return;
+        }
         
         // Check all visible editors, not just the active one
         const hasPythonFile = vscode.window.visibleTextEditors.some(
@@ -135,7 +137,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
     /**
      * Restores focus to a specific view
      */
-    private async restoreViewFocus(viewId: string): Promise<void> {
+    private async restoreViewFocus(_viewId: string): Promise<void> {
         try {
             // Focus on our lesson browser view - using the correct view ID
             // The error shows 'lessonBrowserView' is the correct ID, not 'workbench.view.extension.lessonBrowserView'

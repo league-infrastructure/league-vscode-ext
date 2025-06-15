@@ -6,7 +6,6 @@ import { Lesson } from './models';
 import * as fs from 'fs';
 
 
-
 export class LessonDisplay {
 	lessonTab?: vscode.Tab; 	// Either a Markdown or a Notebook tab
 	exerciseTab?: vscode.Tab; 	// A Python tab, maybe Java someday. 
@@ -306,13 +305,6 @@ export class LessonDisplay {
 		return allTrue;
 
 	}
-
-
-
-
-	//await vscode.commands.executeCommand('workbench.action.moveEditorToAboveGroup');
-	//await vscode.commands.executeCommand('workbench.action.moveEditorToRightGroup');
-
 
 
 }
