@@ -111,7 +111,7 @@ class LessonActionsViewProvider implements vscode.WebviewViewProvider {
                 vscode.commands.executeCommand('workbench.action.closePanel');
 				this.restoreViewFocus('lessonBrowserView');
                 console.info('Debugging started with default command.');
-            })
+            });
 
 
 	

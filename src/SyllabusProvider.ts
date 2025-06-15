@@ -496,20 +496,18 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
         } else if (arg instanceof LessonItem) {
             // It's a LessonItem directly
             targetLesson = arg;
+        } 
+
+        if (targetLesson && targetLesson instanceof LessonItem) {
+                    // Only update status if it's different from the current state
+            if (targetLesson.getCompletionStatus() !== status) {
+                // Set completion status
+                targetLesson.setCompletionStatus(status);
+                this.writeCompletion();
+                this.refresh();
+            }
         }
 
-        if (!targetLesson) {
-            console.log('SetCompletion: No valid lesson target found');
-            return;
-        }
-
-        // Only update status if it's different from the current state
-        if (targetLesson.getCompletionStatus() !== status) {
-            // Set completion status
-            targetLesson.setCompletionStatus(status);
-            this.writeCompletion();
-            this.refresh();
-        }
 
         // Get the next lesson and open it if it exists
         if (status) {
@@ -517,7 +515,7 @@ export class SyllabusProvider implements vscode.TreeDataProvider<SyllabusItem> {
             if (nextLessonItem && nextLessonItem instanceof LessonItem) {
                 this.openLesson(nextLessonItem);
             } else {
-                console.log(`No next lesson after ${targetLesson.nodeId}`);
+                console.log(`No next lesson after ${targetLesson?.nodeId ?? 'unknown'}`);
             }
         }
     
