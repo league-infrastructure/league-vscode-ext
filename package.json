@@ -3,7 +3,7 @@
 	"displayName": "League Lesson Browser",
 	"description": "Display programming lessons defined in a YAML syllabus",
 	"icon": "./media/png/flag.png",
-	"version": "1.20250614.10",
+	"version": "1.20250618.1",
 	"publisher": "jointheleague",
 	"private": true,
 	"license": "MIT",
@@ -116,27 +116,27 @@
 			},
 			{
 				"command": "jtl-syllabus.simplifyUI",
-				"title": "UI: Simplify UI for Students",
+				"title": "Student UI Mode",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.defaultUI",
-				"title": "UI: Restore Default UI Settings",
+				"title": "Default UI Mode",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.toggleUI",
-				"title": "UI: Toggle Between Simple and Default UI, and Toggle File Visibility",
+				"title": "Toggle UI Mode",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.hideFiles",
-				"title": "Files: Hide Dot and Special Files",
+				"title": " Hide Dot and Special Files",
 				"category": "League"
 			},
 			{
 				"command": "jtl-syllabus.unhideFiles",
-				"title": "Files: Show Hidden Files",
+				"title": " Show Hidden Files",
 				"category": "League"
 			}
 		],
